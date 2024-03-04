@@ -18,10 +18,10 @@ def rotate_image(image, angle):
 #flip
 def flip_mask(image, mask, CROP_SIZE):
     #Identify quadrant
-    up_left = np.mean(image[:CROP_SIZE/2,:CROP_SIZE/2,0][image[:CROP_SIZE/2,:CROP_SIZE/2,0]>0])
-    down_left = np.mean(image[CROP_SIZE/2:,:CROP_SIZE/2,0][image[CROP_SIZE/2:,:CROP_SIZE/2,0]>0])
-    up_right = np.mean(image[:CROP_SIZE/2,CROP_SIZE/2:,0][image[:CROP_SIZE/2,CROP_SIZE/2:,0]>0])
-    down_right = np.mean(image[CROP_SIZE/2:,CROP_SIZE/2:,0][image[CROP_SIZE/2:,CROP_SIZE/2:,0]>0])
+    up_left = np.mean(image[:int(CROP_SIZE/2),:int(CROP_SIZE/2),0][image[:int(CROP_SIZE/2),:int(CROP_SIZE/2),0]>0])
+    down_left = np.mean(image[int(CROP_SIZE/2):,:int(CROP_SIZE/2),0][image[int(CROP_SIZE/2):,:int(CROP_SIZE/2),0]>0])
+    up_right = np.mean(image[:int(CROP_SIZE/2),int(CROP_SIZE/2):,0][image[:int(CROP_SIZE/2),int(CROP_SIZE/2):,0]>0])
+    down_right = np.mean(image[int(CROP_SIZE/2):,int(CROP_SIZE/2):,0][image[int(CROP_SIZE/2):,int(CROP_SIZE/2):,0]>0])
     
     vec = [up_left, down_left, up_right, down_right]
     index = np.argmax(vec)

@@ -1,15 +1,19 @@
 import os
 import math
 import gc
+import re
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-from einops import repeat,rearrange
+from einops import repeat, rearrange
 from skimage.io import imread, imshow, imsave
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 from skimage.transform import rescale, resize
 from cell_transformations import flip_mask, rotate_image
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = 1000000000   
+
 np.seterr(divide='ignore')
 
 def get_channel_info():
@@ -37,12 +41,11 @@ def norm_if_channel(ch):
     return ch
 
 #normalize all IF channels
-def norm_if(IF, keep_channels_idx):
+def norm_if(IF):
     increase_min = [i for i in range(IF.shape[0])]
-    output = np.empty((len(keep_channels_idx), IF.shape[1], IF.shape[2]), dtype='uint8')
-    for i,ch_i in tqdm(enumerate(keep_channels_idx)):
-        
-        output[i] = norm_if_channel(IF[ch_i].compute())
+    output = np.empty(IF.shape, dtype='uint8')
+    for i,ch in tqdm(enumerate(IF)):
+        output[i] = norm_if_channel(ch)
  
     return output
 
@@ -72,7 +75,7 @@ def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size
 
         #crop image and mask
         #im = wsi[:, xmin:xmax, ymin:ymax].compute().copy()
-        if_im = IF[:, xmin:xmax, ymin:ymax].copy()
+        im = IF[:, xmin:xmax, ymin:ymax].copy()
         mask = cell_mask[xmin:xmax, ymin:ymax].copy()
 
         #isolate single cell
@@ -85,7 +88,7 @@ def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size
         mask = repeat(mask, 'h w -> c h w', c=len(keep_channels))
 
         #check for segmentation error
-        if if_im[0].mean() == 0: 
+        if im[0].mean() == 0: 
             num_removed_from_seg += 1
             continue 
             
@@ -96,14 +99,14 @@ def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size
         #perform transformations
         im = rotate_image(im,-math.degrees(rp.orientation))
         mask = rotate_image(mask, -math.degrees(rp.orientation))
-        im, mask = flip_mask(im, mask)
+        im, mask = flip_mask(im, mask, crop_size)
 
         #undo repeat op
         mask = mask[:,:,0]
         
         #crop to 32x32px
-        im = im[crop_size/2:-crop_size/2, crop_size/2:-crop_size/2,:]
-        mask = mask[crop_size/2:-crop_size/2, crop_size/2:-crop_size/2]
+        im = im[int(crop_size/2):-int(crop_size/2), int(crop_size/2):-int(crop_size/2),:]
+        mask = mask[int(crop_size/2):-int(crop_size/2), int(crop_size/2):-int(crop_size/2)]
         
         assert im.shape == (crop_size,crop_size,num_channels), f"error im not in HxWxC, {im.shape=}"
         assert mask.shape == (crop_size,crop_size), f"error, mask shape not 32x32, {mask.shape=}"
@@ -124,8 +127,10 @@ if __name__ == '__main__':
     CROP_SIZE = 32
     keep_channels, keep_channels_idx, ch2idx = get_channel_info()
     
-    save_dir =  '/home/exacloud/gscratch/CEDAR/panel-reduction/BIOLIB-IMMUNE'
-    mask_save_dir = '/home/exacloud/gscratch/CEDAR/panel-reduction/BIOLIB-IMMUNE-cell-masks'
+    #save_dir =  '/home/exacloud/gscratch/CEDAR/cycif-panel-reduction/biolib-immune-rescale'
+    #mask_save_dir = '/home/exacloud/gscratch/CEDAR/cycif-panel-reduction/biolib-immune-cell-masks-rescale'
+    save_dir =  '/home/groups/ChangLab/dataset/cycif-panel-reduction/biolib-immune'
+    mask_save_dir = '/home/groups/ChangLab/dataset/cycif-panel-reduction/biolib-immune-cell'
     if not os.path.exists(save_dir): os.mkdir(save_dir)
     if not os.path.exists(mask_save_dir): os.mkdir(mask_save_dir)
     
@@ -145,14 +150,15 @@ if __name__ == '__main__':
         id_folder = [f for f in subdirs if f.startswith(f"{id_}")][0]
         sample_dirs.append(f'{biolib_immune_dir}/{id_folder}')
     
-    
+    max_round = 10
+    max_channel = 5
     sorted_sample_dirs = []
     for dir_ in sample_dirs:
         sorted_files = []
         for round in range(1, max_round+1):
             for ch in range(1, max_channel+1):
                 files = [f for f in os.listdir(dir_) if (f'R{round}_' in f) and (f'_c{ch}_' in f)]
-                if len(files) > 0: sorted_files.append(files[0])
+                if len(files) > 0: sorted_files.append(f'{dir_}/{files[0]}')
         sorted_sample_dirs.append(sorted_files)
     
     mask_paths = [
@@ -166,18 +172,20 @@ if __name__ == '__main__':
 "/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/SubtractedRegisteredImages/31480-6_AFSubtracted - Segmentation-corrected/Scene 001 - Cell Labels.tif",
 "/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/SubtractedRegisteredImages/54774-4_AFSubtracted - Segmentation-corrected/Scene 001 - Cell Labels.tif"]
     
-    for sample_dir, sample_name, mask_path in zip(sorted_sample_dirs, ids, mask_paths):
+    for sample_dir, sample_name in zip(sorted_sample_dirs, ids):
         print('retrieving samples...')
         IF = get_sample(sample_dir, keep_channels_idx)
+        IF = rescale(IF, 0.5, channel_axis=0)
         print(IF.shape)
         
         print('retrieving cell mask...')
-        assert sample_name in mask_path, "error, mismatching cell mask for sample id"
+        mask_path = [f for f in mask_paths if sample_name in f][0]
         cell_mask = imread(mask_path)
+        cell_mask = rescale(cell_mask, 0.5, order=0)
         print(cell_mask.shape)
     
         print('normalizing IF...')
-        IF = norm_if(IF, keep_channels_idx)
+        IF = norm_if(IF)
     
         print('padding images...')
         pad = ((0,),(CROP_SIZE,), (CROP_SIZE,)) #pad 2nd and 3rd dimensions with 64 pixels
