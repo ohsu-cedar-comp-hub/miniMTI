@@ -18,7 +18,7 @@ np.seterr(divide='ignore')
 
 def get_channel_info():
     """returns lists of channel names and indices that are going to be kept, as well as a dictionary mapping maker names to indices"""
-    RoundsCyclesTable = '/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/RoundsCyclesTable.txt'
+    RoundsCyclesTable = 'RoundsCyclesTable.txt'
     with open(RoundsCyclesTable) as f:
         channels = []
         for l in f.readlines():
@@ -60,6 +60,8 @@ def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size
     rps = regionprops(cell_mask.astype('int'))
     num_removed_from_size = 0
     num_removed_from_seg = 0
+    
+    masks, images, metadata = [], [], [] 
     for rp in tqdm(rps):
 
         #size filter, make sure bbox for cell mask is not bigger than 32x32px
@@ -110,17 +112,18 @@ def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size
         
         assert im.shape == (crop_size,crop_size,num_channels), f"error im not in HxWxC, {im.shape=}"
         assert mask.shape == (crop_size,crop_size), f"error, mask shape not 32x32, {mask.shape=}"
-
-        #save image
-        save_fname = f'{sample_name}-CellID-{rp.label}-x={center_x}-y={center_y}.tif'
-        save_mask_fname = f'{sample_name}-CellID-{rp.label}-x={center_x}-y={center_y}-mask.tif'
-        imsave(os.path.join(save_dir, save_fname), im.astype('uint8') , check_contrast=False)        
-        imsave(os.path.join(mask_save_dir, save_mask_fname), mask.astype('uint8'), check_contrast=False) 
+        
+        meta = f'{sample_name}-CellID-{rp.label}-x={center_x}-y={center_y}'
+        masks.append(mask)
+        images.append(im)
+        metadata.append(meta)
 
     print(f'finished processing sample {sample_name}, {num_removed_from_size=}, {num_removed_from_seg=}')
     del IF
     del cell_mask
     gc.collect()
+    
+    return masks, images, metadata
     
 
 if __name__ == '__main__':  
@@ -130,7 +133,7 @@ if __name__ == '__main__':
     #save_dir =  '/home/exacloud/gscratch/CEDAR/cycif-panel-reduction/biolib-immune-rescale'
     #mask_save_dir = '/home/exacloud/gscratch/CEDAR/cycif-panel-reduction/biolib-immune-cell-masks-rescale'
     save_dir =  '/home/groups/ChangLab/dataset/cycif-panel-reduction/biolib-immune'
-    mask_save_dir = '/home/groups/ChangLab/dataset/cycif-panel-reduction/biolib-immune-cell'
+    save_fname = 'biolib_immune_dataset_rescaled.h5'
     if not os.path.exists(save_dir): os.mkdir(save_dir)
     if not os.path.exists(mask_save_dir): os.mkdir(mask_save_dir)
     
@@ -171,7 +174,7 @@ if __name__ == '__main__':
 "/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/SubtractedRegisteredImages/30411-6_AFSubtracted - Segmentation-corrected/Scene 001 - Cell Labels.tif",
 "/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/SubtractedRegisteredImages/31480-6_AFSubtracted - Segmentation-corrected/Scene 001 - Cell Labels.tif",
 "/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/SubtractedRegisteredImages/54774-4_AFSubtracted - Segmentation-corrected/Scene 001 - Cell Labels.tif"]
-    
+    masks, images, metadata = [], [], [] 
     for sample_dir, sample_name in zip(sorted_sample_dirs, ids):
         print('retrieving samples...')
         IF = get_sample(sample_dir, keep_channels_idx)
@@ -193,6 +196,16 @@ if __name__ == '__main__':
         print(IF.shape)
     
         print(f'extracting cells from wsi...')
-        extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, CROP_SIZE, len(keep_channels))
+        masks_, images_, metadata_, = extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, CROP_SIZE, len(keep_channels))
+        masks.extend(masks_)
+        images.extend(images_)
+        metadata.extend(metadata_)
+        
+    with h5py.File(f'{save_dir}/{save_fname}', 'w') as f:
+        images = h5f.create_dataset('images',data=np.stack(images))
+        masks = h5f.create_dataset('masks',data=np.stack(masks))
+        metas = h5f.create_dataset('cell-metadata',data=metadata)
+        
+     
 
 
