@@ -4,6 +4,7 @@ import gc
 import re
 from tqdm import tqdm
 import numpy as np
+import h5py
 import matplotlib.pyplot as plt
 from einops import repeat, rearrange
 from skimage.io import imread, imshow, imsave
@@ -130,8 +131,6 @@ if __name__ == '__main__':
     CROP_SIZE = 32
     keep_channels, keep_channels_idx, ch2idx = get_channel_info()
     
-    #save_dir =  '/home/exacloud/gscratch/CEDAR/cycif-panel-reduction/biolib-immune-rescale'
-    #mask_save_dir = '/home/exacloud/gscratch/CEDAR/cycif-panel-reduction/biolib-immune-cell-masks-rescale'
     save_dir =  '/home/groups/ChangLab/dataset/cycif-panel-reduction/biolib-immune'
     save_fname = 'biolib_immune_dataset_rescaled.h5'
     if not os.path.exists(save_dir): os.mkdir(save_dir)
