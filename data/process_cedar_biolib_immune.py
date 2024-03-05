@@ -202,9 +202,9 @@ if __name__ == '__main__':
         metadata.extend(metadata_)
         
     with h5py.File(f'{save_dir}/{save_fname}', 'w') as f:
-        images = h5f.create_dataset('images',data=np.stack(images))
-        masks = h5f.create_dataset('masks',data=np.stack(masks))
-        metas = h5f.create_dataset('cell-metadata',data=metadata)
+        images = f.create_dataset('images',data=np.stack(images))
+        masks = f.create_dataset('masks',data=np.stack(masks))
+        metas = f.create_dataset('cell-metadata',data=metadata)
         
      
 
