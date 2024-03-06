@@ -120,7 +120,7 @@ class MAE(nn.Module):
         if masked_patch_idx is not None:
             assert len(masked_patch_idx) == num_masked, f'wrong number of masked patches chosen, expected {num_masked}'
             unmasked_patch_idx = [idx for idx in range(num_patches) if idx not in masked_patch_idx]
-            masked_indices = repeat(torch.tensor(masked_patch_idx), 'd -> b d', b=batch)
+            masked_indices = repeat(masked_patch_idx.clone(), 'd -> b d', b=batch)
             unmasked_indices = repeat(torch.tensor(unmasked_patch_idx), 'd -> b d', b=batch)
             
         # get the unmasked tokens to be encoded

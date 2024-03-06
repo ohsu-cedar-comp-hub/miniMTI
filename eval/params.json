@@ -1,0 +1,5 @@
+{"channels":41,
+ "decoder_dim":1024,
+ "decoder_depth":11,
+ "decoder_heads":6
+}
