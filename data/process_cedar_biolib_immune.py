@@ -7,6 +7,7 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 from einops import repeat, rearrange
+from skimage.util import img_as_uint
 from skimage.io import imread, imshow, imsave
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
@@ -27,7 +28,7 @@ def get_channel_info():
             if l.split(' ')[2] == 'c2': channels.extend([f"DAPI_{l.split(' ')[1]}", ch_name])
             else: channels.append(ch_name)
 
-    keep_channels = [ch for ch in channels if ('DAPI' not in ch) or (('DAPI' in ch) and (ch == 'DAPI_R1'))]
+    keep_channels = [ch for ch in channels if (('DAPI' not in ch) or (('DAPI' in ch) and (ch == 'DAPI_R1'))) and (ch != 'R4c2')]
     keep_channels_idx = [i for i,ch in enumerate(channels) if ch in keep_channels]
     ch2idx = {ch:i for i,ch in enumerate(keep_channels)}
 
@@ -43,7 +44,6 @@ def norm_if_channel(ch):
 
 #normalize all IF channels
 def norm_if(IF):
-    increase_min = [i for i in range(IF.shape[0])]
     output = np.empty(IF.shape, dtype='uint8')
     for i,ch in tqdm(enumerate(IF)):
         output[i] = norm_if_channel(ch)
@@ -52,8 +52,8 @@ def norm_if(IF):
 
 
 def get_sample(sample_dir, keep_channels_idx):
-    IF_channels = [np.expand_dims(imread(f), 0) for i,f in enumerate(sample_dir) if i in keep_channels_idx]
-    return np.concatenate(IF_channels, axis=0)
+    IF_channels = [img_as_uint(rescale(imread(f), 0.5)) for i,f in enumerate(sample_dir) if i in keep_channels_idx]
+    return np.stack(IF_channels)
 
 
 def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size, num_channels):
@@ -61,7 +61,6 @@ def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size
     rps = regionprops(cell_mask.astype('int'))
     num_removed_from_size = 0
     num_removed_from_seg = 0
-    
     masks, images, metadata = [], [], [] 
     for rp in tqdm(rps):
 
@@ -132,7 +131,6 @@ if __name__ == '__main__':
     keep_channels, keep_channels_idx, ch2idx = get_channel_info()
     
     save_dir =  '/home/groups/ChangLab/dataset/cycif-panel-reduction/biolib-immune'
-    save_fname = 'biolib_immune_dataset_rescaled.h5'
     if not os.path.exists(save_dir): os.mkdir(save_dir)
     if not os.path.exists(mask_save_dir): os.mkdir(mask_save_dir)
     
@@ -173,11 +171,9 @@ if __name__ == '__main__':
 "/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/SubtractedRegisteredImages/30411-6_AFSubtracted - Segmentation-corrected/Scene 001 - Cell Labels.tif",
 "/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/SubtractedRegisteredImages/31480-6_AFSubtracted - Segmentation-corrected/Scene 001 - Cell Labels.tif",
 "/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/SubtractedRegisteredImages/54774-4_AFSubtracted - Segmentation-corrected/Scene 001 - Cell Labels.tif"]
-    masks, images, metadata = [], [], [] 
     for sample_dir, sample_name in zip(sorted_sample_dirs, ids):
         print('retrieving samples...')
         IF = get_sample(sample_dir, keep_channels_idx)
-        IF = rescale(IF, 0.5, channel_axis=0)
         print(IF.shape)
         
         print('retrieving cell mask...')
@@ -195,15 +191,13 @@ if __name__ == '__main__':
         print(IF.shape)
     
         print(f'extracting cells from wsi...')
-        masks_, images_, metadata_, = extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, CROP_SIZE, len(keep_channels))
-        masks.extend(masks_)
-        images.extend(images_)
-        metadata.extend(metadata_)
+        masks, images, metadata, = extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, CROP_SIZE, len(keep_channels))
         
-    with h5py.File(f'{save_dir}/{save_fname}', 'w') as f:
-        images = f.create_dataset('images',data=np.stack(images))
-        masks = f.create_dataset('masks',data=np.stack(masks))
-        metas = f.create_dataset('cell-metadata',data=metadata)
+        save_fname = f'biolib_immune_dataset_rescaled_sid={sample_name}.h5'
+        with h5py.File(f'{save_dir}/{save_fname}', 'w') as f:
+            images = f.create_dataset('images',data=np.stack(images))
+            masks = f.create_dataset('masks',data=np.stack(masks))
+            metas = f.create_dataset('metadata',data=metadata)
         
      
 
