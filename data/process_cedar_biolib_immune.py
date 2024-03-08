@@ -1,3 +1,4 @@
+print('importing libraries')
 import os
 import math
 import gc
@@ -15,12 +16,16 @@ from skimage.transform import rescale, resize
 from cell_transformations import flip_mask, rotate_image
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = 1000000000   
-
 np.seterr(divide='ignore')
 
 def get_channel_info():
     """returns lists of channel names and indices that are going to be kept, as well as a dictionary mapping maker names to indices"""
     RoundsCyclesTable = 'RoundsCyclesTable.txt'
+    try:
+        assert os.path.exists('RoundsCyclesTable.txt')
+    except AssertionError:
+        RoundsCyclesTable = '../data/RoundsCyclesTable.txt'
+        
     with open(RoundsCyclesTable) as f:
         channels = []
         for l in f.readlines():
@@ -56,7 +61,7 @@ def get_sample(sample_dir, keep_channels_idx):
     return np.stack(IF_channels)
 
 
-def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size, num_channels):
+def extract_cells(IF, cell_mask, sample_name, save_dir, crop_size, num_channels):
     #iterate through cell regions
     rps = regionprops(cell_mask.astype('int'))
     num_removed_from_size = 0
@@ -126,13 +131,13 @@ def extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, crop_size
     return masks, images, metadata
     
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
+    print('entering main')
     CROP_SIZE = 32
     keep_channels, keep_channels_idx, ch2idx = get_channel_info()
     
-    save_dir =  '/home/groups/ChangLab/dataset/cycif-panel-reduction/biolib-immune'
+    save_dir =  '/home/groups/ChangLab/simsz/cycif-panel-reduction/data/biolib-immune'
     if not os.path.exists(save_dir): os.mkdir(save_dir)
-    if not os.path.exists(mask_save_dir): os.mkdir(mask_save_dir)
     
     biolib_immune_dir = '/home/exacloud/gscratch/CEDAR/cIFimaging/Cyclic_Workflow/2020_Immune/RegisteredImages/'
     subdirs = os.listdir(biolib_immune_dir)
@@ -191,8 +196,9 @@ if __name__ == '__main__':
         print(IF.shape)
     
         print(f'extracting cells from wsi...')
-        masks, images, metadata, = extract_cells(IF, cell_mask, sample_name, save_dir, mask_save_dir, CROP_SIZE, len(keep_channels))
+        masks, images, metadata = extract_cells(IF, cell_mask, sample_name, save_dir, CROP_SIZE, len(keep_channels))
         
+        print(f'saving cells to hdf5 file...')
         save_fname = f'biolib_immune_dataset_rescaled_sid={sample_name}.h5'
         with h5py.File(f'{save_dir}/{save_fname}', 'w') as f:
             images = f.create_dataset('images',data=np.stack(images))

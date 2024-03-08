@@ -11,7 +11,6 @@ class IF_MAE(pl.LightningModule):
     def __init__(self,
                  lr,
                  weight_decay,
-                 warmup_steps,
                  decoder_dim=512,
                  decoder_depth = 12,
                  decoder_heads = 8,
@@ -21,7 +20,6 @@ class IF_MAE(pl.LightningModule):
         
         self.lr = lr
         self.weight_decay = weight_decay
-        self.lr_warmup_steps = warmup_steps
         
         self.mae= MAE(image_size=32, 
                       channels=41, 
@@ -38,20 +36,7 @@ class IF_MAE(pl.LightningModule):
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-        #scheduler = ExponentialLR(optimizer, self.lr_warmup_steps)
         return optimizer
-        return (
-            [optimizer],
-            [
-                {
-                    'scheduler': scheduler,
-                    'interval': 'step',
-                    'frequency': 1,
-                    'reduce_on_plateau': False,
-                    'monitor': 'train_loss',
-                }
-            ]
-        )
 
     def training_step(self, train_batch, batch_idx):
         _, gt, preds, _, _, mask = self.mae(train_batch)

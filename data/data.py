@@ -1,102 +1,49 @@
 import os
-import torch
-from torch.utils.data import Dataset
-from skimage.io import imread
-from skimage.color import rgb2gray
-import histomicstk as htk
-from einops import repeat, rearrange
-from torch.utils.data import DataLoader
-import numpy as np
+import sys
 import random
+import h5py
+import numpy as np
+import torch
+from torch.utils.data import Dataset, DataLoader
+from skimage.io import imread
+from einops import repeat, rearrange
+
 
 class SingleCellDataset(Dataset):
-    def __init__(self, files, mask_dir, include_he, remove_background, grayscale, deconvolve):
-        self.img_files = files
-        self.mask_dir = mask_dir
-        self.include_he = include_he
-        self.remove_background = remove_background
-        self.grayscale = grayscale
-        self.deconvolve = deconvolve
+    def __init__(self, images, masks, metadata, remove_background=True):
+        self.images = images
+        self.masks = masks
+        self.metadata = metadata
+        self.remove_background =remove_background
         
-
     def __len__(self):
-        return len(self.img_files)
+        return len(self.images)
 
     def __getitem__(self, idx):
-        filepath = self.img_files[idx]
-        im = imread(filepath)
-        # whether to include H&E information
-        if self.include_he == False: 
-            pass
-            #im = im[:,:,:-3] #remove last three channels (H&E RGB channels)
-        #else:
-        elif self.grayscale == True: #replace DAPI with grayscale H&E
-            he_im = im[:,:,-3:].copy() #slice off H&E channels
-            he_im = rgb2gray(he_im) #convert H&E to grayscale
-            im = np.concatenate([np.expand_dims(he_im, 2),im[:,:,1:-3]], axis=2) #restack IF channels(minus DAPI) and grayscale H&E channel
-        elif self.deconvolve == True:
-            stain_color_map = htk.preprocessing.color_deconvolution.stain_color_map
-            # specify stains of input image
-            stains = ['hematoxylin',  # nuclei stain
-                      'eosin',        # cytoplasm stain
-                      'null']         # set to null if input contains only two stains
-            # create stain matrix
-            W = np.array([stain_color_map[st] for st in stains]).T
-            he_im = im[:,:,-3:].copy()
-            imDeconvolved = htk.preprocessing.color_deconvolution.color_deconvolution(he_im, W)
-            he_im = imDeconvolved.Stains[:,:,:2]
-            im = np.concatenate([im[:,:,:-3], he_im], axis=2) #restack IF channels and deconvolved H and E channels
-            
-            
-            
+        meta = self.metadata[idx]
+        im = self.images[idx]
+        mask = self.masks[idx]   
         num_channels = im.shape[-1]
         tensor = torch.from_numpy(im)
         tensor = rearrange(tensor, 'h w c -> c h w') 
         tensor = tensor.float()
 
-        mask_path = os.path.join(self.mask_dir, os.path.basename(filepath).replace('.tif', '-mask.tif'))
-        mask = imread(mask_path)
         mask = torch.tensor(mask.astype('bool'))
         
         if self.remove_background:
-            if self.include_he: #only remove background for IF channels
-                if self.grayscale:
-                    mask = repeat(mask, 'h w -> c h w', c=num_channels - 1)
-                    if_tensor = tensor[1:,:,:].clone()
-                    if_tensor[mask == 0] = 0
-                    tensor[1:,:,:] = if_tensor
-                elif self.deconvolve:
-                    mask = repeat(mask, 'h w -> c h w', c=num_channels - 2)
-                    if_tensor = tensor[:-2,:,:].clone()
-                    if_tensor[mask == 0] = 0
-                    tensor[:-2,:,:] = if_tensor
-                    
-                else:
-                    mask = repeat(mask, 'h w -> c h w', c=num_channels - 3)
-                    if_tensor = tensor[:-3,:,:].clone()
-                    if_tensor[mask == 0] = 0
-                    tensor[:-3,:,:] = if_tensor
-                            
-            else:
-                mask = repeat(mask, 'h w -> c h w', c=num_channels)
-                tensor[mask == 0] = 0
+            mask = repeat(mask, 'h w -> c h w', c=num_channels)
+            tensor[mask == 0] = 0
             mask = mask[0]
             
-        return tensor, mask, filepath
+        return tensor, mask, meta
 
-def get_train_dataloaders(batch_size, num_val_samples, include_he, remove_background, grayscale, deconvolve):
-    #data_dir = '/home/exacloud/gscratch/CEDAR/cycif-panel-reduction/biolib-immune-rescale'
-    #mask_dir = '/home/exacloud/gscratch/CEDAR/cycif-panel-reduction/biolib-immune-cell-masks-rescale'
-    data_dir = '/var/local/ChangLab/cedar-panel-reduction/biolib-immune'
-    mask_dir =  '/var/local/ChangLab/cedar-panel-reduction/biolib-immune-cell-mask'
-    train_files = [f'{data_dir}/{f}' for f in os.listdir(data_dir) if ('57658-6' not in f)]
-    print(len(train_files))
-    val_files = [f'{data_dir}/{f}' for f in os.listdir(data_dir) if ('57658-6' in f)]
-    random.Random(4).shuffle(train_files)
-    random.Random(4).shuffle(val_files)
-    train_data = SingleCellDataset(train_files[:-num_val_samples], mask_dir, include_he, remove_background, grayscale, deconvolve)
-    val_data = SingleCellDataset(val_files[:num_val_samples], mask_dir, include_he, remove_background, grayscale, deconvolve)
-    val2_data = SingleCellDataset(train_files[-num_val_samples:], mask_dir, include_he, remove_background, grayscale, deconvolve)
+    
+def get_train_dataloaders(data_dir, val_samples, batch_size, num_val_samples, remove_background=True):
+    train_file = h5py.File('/var/local/ChangLab/biolib-immune/train.h5')
+    val_file = h5py.File('/var/local/ChangLab/biolib-immune/biolib_immune_dataset_rescaled_sid=57658-6.h5')
+    
+    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], remove_background)
+    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], remove_background)
 
     train_loader = DataLoader(train_data, 
                        batch_size=batch_size, 
@@ -110,17 +57,11 @@ def get_train_dataloaders(batch_size, num_val_samples, include_he, remove_backgr
                          num_workers=1,
                          persistent_workers=True,
                          pin_memory=True)
-    val2_loader = DataLoader(val2_data, 
-                         batch_size=batch_size, 
-                         shuffle=False, 
-                         num_workers=1,
-                         persistent_workers=True,
-                         pin_memory=True)
-
-    return train_loader, val_loader, val2_loader
+    
+    return train_loader, val_loader 
 
 
-def get_panel_selection_data(data_dir, val_dataset, mask_dir, batch_size, dataset_size, shuffle_data, include_he, remove_background, grayscale, deconvolve):
+def get_panel_selection_data(val_file, batch_size, dataset_size, remove_background):
 
     """
     Retrieves a DataLoader for validation datasets in CRC dataset.
@@ -148,17 +89,13 @@ def get_panel_selection_data(data_dir, val_dataset, mask_dir, batch_size, datase
     
 
     try: 
-        print("-- Scanning files in ", val_dataset)
-        files = [f'{data_dir}/{f}' for f in os.listdir(data_dir) if any(ds in f for ds in val_dataset)]
-        print("-- Randomly shuffling data")
-        # TODO: make random shuffle a flag
-
-        if shuffle_data: 
-            random.seed(123)  # Set the seed for reproducibility
-            random.shuffle(files)
+        val_file = h5py.File(val_file[0])
+        random.seed(123)  # Set the seed for reproducibility
+        idx = np.arange(len(val_file['images']))
+        #random.shuffle(idx)
 
         # Calculate the number of files and the dataset size
-        num_files = len(files)
+        num_files = len(idx)
 
         if dataset_size in ['all', 'All']:
             print(f"-- Using all of the validation dataset, size={num_files}")
@@ -174,11 +111,11 @@ def get_panel_selection_data(data_dir, val_dataset, mask_dir, batch_size, datase
         dataset_percentage = (dataset_size/num_files) * 100
 
         print(f"-- Using {dataset_percentage}% of the dataset, selecting {dataset_size} files out of {num_files} files")
-        val_files = files[:dataset_size]
+        idx = idx[:dataset_size]
 
         # for now, use False for remove_background
         print("-- Loading the dataset into dataloader")
-        val_data = SingleCellDataset(val_files, mask_dir, include_he, remove_background, grayscale, deconvolve)
+        val_data = SingleCellDataset(val_file['images'][idx], val_file['masks'][idx], val_file['metadata'][idx], remove_background)
         val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False, num_workers=1, persistent_workers=True, pin_memory=True)
         return val_loader
         

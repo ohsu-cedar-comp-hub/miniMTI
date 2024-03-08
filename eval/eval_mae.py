@@ -11,7 +11,6 @@ class IF_MAE(pl.LightningModule):
                  decoder_heads = 2,
                  decoder_dim_head = 64):
         super().__init__()
-        self.save_hyperparameters()
         self.mae= MAE(image_size=32, 
                       channels=channels, 
                       decoder_dim=decoder_dim,

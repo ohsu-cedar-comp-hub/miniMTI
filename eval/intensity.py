@@ -11,7 +11,6 @@ from scipy.stats import gaussian_kde
 from einops import rearrange, repeat
 from torchmetrics.functional import structural_similarity_index_measure as ssim
 from torchmetrics.functional import spearman_corrcoef as spearman
-from channel_info import get_channel_info
 
 def get_mints(unmasked, gt, preds, mask, device):
     #reshape to BxCxHxW
@@ -30,7 +29,7 @@ def get_mints(unmasked, gt, preds, mask, device):
 
 
 
-def get_intensities_run_panel_order(model, panel, val_loader, max_panel_size, batch_size, include_he, device='cpu'):
+def get_intensities_run_panel_order(model, panel, val_loader, max_panel_size, batch_size, device='cpu'):
     
     masked_ch_idx = torch.tensor([i for i in range(max_panel_size) if i not in panel], device=device)
     model.mae.masking_ratio = (max_panel_size - len(panel)) / max_panel_size
@@ -186,7 +185,7 @@ def plot_intensities(mints, pmints, masked_ch_idx, ch2stain):
     else:
         stain_corrs = spearman(pmints, mints)
     #cls iteratively selected panel
-    fig, ax = plt.subplots(1, len(masked_ch_idx), figsize=(6 * len(masked_ch_idx), 6), layout='tight')
+    fig, ax = plt.subplots(1, len(masked_ch_idx), figsize=(12 * len(masked_ch_idx), 12), layout='tight')
     for i,a in enumerate(fig.axes):
 
         a.set_title(f'{ch2stain[masked_ch_idx[i]]}\n(⍴={round(stain_corrs[i].item(),2)})', fontsize=120)
