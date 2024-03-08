@@ -38,9 +38,9 @@ class SingleCellDataset(Dataset):
         return tensor, mask, meta
 
     
-def get_train_dataloaders(data_dir, val_samples, batch_size, num_val_samples, remove_background=True):
-    train_file = h5py.File('/var/local/ChangLab/biolib-immune/train.h5')
-    val_file = h5py.File('/var/local/ChangLab/biolib-immune/biolib_immune_dataset_rescaled_sid=57658-6.h5')
+def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, remove_background=True):
+    train_file = h5py.File(train_file)
+    val_file = h5py.File(val_file)
     
     train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], remove_background)
     val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], remove_background)

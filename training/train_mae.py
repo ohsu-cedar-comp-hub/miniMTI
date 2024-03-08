@@ -10,6 +10,9 @@ from mae import MAE
 class IF_MAE(pl.LightningModule):
     def __init__(self,
                  lr,
+                 masking_ratio,
+                 image_size,
+                 num_channels,
                  weight_decay,
                  decoder_dim=512,
                  decoder_depth = 12,
@@ -21,9 +24,9 @@ class IF_MAE(pl.LightningModule):
         self.lr = lr
         self.weight_decay = weight_decay
         
-        self.mae= MAE(image_size=32, 
-                      channels=41, 
-                      masking_ratio = 0.5,
+        self.mae= MAE(image_size=image_size, 
+                      channels=num_channels, 
+                      masking_ratio = masking_ratio,
                       decoder_dim=decoder_dim,
                       decoder_depth = decoder_depth,
                       decoder_heads = decoder_heads,

@@ -10,13 +10,17 @@ from data import get_train_dataloaders
     
     
 def train_model():
+    NUM_EPOCHS = 150
     BATCH_SIZE = 1024
     NUM_VAL_SAMPLES = 50_000
-    data_dir = '/var/local/ChangLab/biolib-immune'
-    val_samples = ['57658-6']
-    train_loader, val_loader = get_train_dataloaders(data_dir, val_samples, BATCH_SIZE, NUM_VAL_SAMPLES)                         
+    train_file = '/var/local/ChangLab/biolib-immune/train.h5'
+    val_file = '/var/local/ChangLab/biolib-immune/biolib_immune_dataset_rescaled_sid=57658-6.h5'
+    train_loader, val_loader = get_train_dataloaders(train_file, val_file, BATCH_SIZE, NUM_VAL_SAMPLES)                         
     
     lr=1e-4
+    image_size = 32
+    num_channels = 40
+    masking_ratio = 0.5
     weight_decay=0
     decoder_dim=1024
     decoder_depth = 8
@@ -27,6 +31,9 @@ def train_model():
     checkpoint_callback = ModelCheckpoint(monitor="val_loss", mode="min")
     
     model = IF_MAE(lr = lr,
+                   image_size=image_size,
+                   num_channels=num_channels,
+                   masking_ratio=masking_ratio,
                    weight_decay=weight_decay,
                    decoder_dim=decoder_dim,
                    decoder_depth = decoder_depth,
@@ -41,7 +48,7 @@ def train_model():
                          devices=4,
                          logger=wandb_logger,
                          callbacks=[checkpoint_callback],
-                         max_epochs=150,
+                         max_epochs=NUM_EPOCHS,
                          num_sanity_val_steps=0,
                          strategy='ddp')
     if trainer.global_rank == 0:
