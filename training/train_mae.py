@@ -4,7 +4,7 @@ from einops import repeat, rearrange
 import pytorch_lightning as pl
 from torchmetrics.functional import structural_similarity_index_measure as ssim
 from torchmetrics.functional import spearman_corrcoef as spearman
-from torch.optim.lr_scheduler import ExponentialLR
+from torch.optim.lr_scheduler import LambdaLR
 from mae import MAE
 
 class IF_MAE(pl.LightningModule):
@@ -40,6 +40,26 @@ class IF_MAE(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         return optimizer
+         
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+
+        def lr_foo(epoch):
+            warmup_step = 3
+            if epoch < warmup_step:
+                # warm up lr
+                lr_scale = 0.1 ** (warmup_step - epoch)
+            else:
+                lr_scale = 0.995 ** epoch
+
+            return lr_scale
+
+        scheduler = LambdaLR(
+            optimizer,
+            lr_lambda=lr_foo
+        )
+
+        return [optimizer], [scheduler]
+       
 
     def training_step(self, train_batch, batch_idx):
         _, gt, preds, _, _, mask = self.mae(train_batch)
@@ -56,8 +76,12 @@ class IF_MAE(pl.LightningModule):
         mask = repeat(mask,'b h w -> b c h w', c=preds.shape[1])
         mints = (gt * mask).sum(dim=(2,3)) / mask.sum(dim=(2,3))
         pmints = (preds * mask).sum(dim=(2,3)) / mask.sum(dim=(2,3))
-        
-        spearman_corr = spearman(mints, pmints).mean()
+        if mints.shape[1] == 1:
+            spearman_corr = spearman(pmints.squeeze(), mints.squeeze())
+            sperman_corr = spearman_corr.unsqueeze(0)
+        else:
+            spearman_corr = spearman(pmints, mints) 
+        spearman_corr = spearman_corr.mean()
         ssim_score = ssim(gt, preds)
         self.log('ssim', ssim_score, sync_dist=True)
         self.log('spearman', spearman_corr, sync_dist=True)
@@ -79,8 +103,12 @@ class IF_MAE(pl.LightningModule):
         mask = repeat(mask,'b h w -> b c h w', c=preds.shape[1])
         mints = (gt * mask).sum(dim=(2,3)) / mask.sum(dim=(2,3))
         pmints = (preds * mask).sum(dim=(2,3)) / mask.sum(dim=(2,3))
-        
-        spearman_corr = spearman(mints, pmints).mean()
+        if mints.shape[1] == 1:
+            spearman_corr = spearman(pmints.squeeze(), mints.squeeze())
+            sperman_corr = spearman_corr.unsqueeze(0)
+        else:
+            spearman_corr = spearman(pmints, mints) 
+        spearman_corr = spearman_corr.mean()
         ssim_score = ssim(gt, preds)
         self.log('val_ssim', ssim_score, sync_dist=True)
         self.log('val_spearman', spearman_corr, sync_dist=True)

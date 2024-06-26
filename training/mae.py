@@ -1,10 +1,10 @@
 import torch
+import numpy as np
 from torch import nn
 import torch.nn.functional as F
 from einops import repeat,rearrange
 from einops.layers.torch import Rearrange
 from vit_pytorch.vit import PreNorm, FeedForward
-
 
 
 class Attention(nn.Module):
@@ -40,7 +40,7 @@ class Attention(nn.Module):
         return self.to_out(out), attn_
 
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.1):
         super().__init__()
         self.layers = nn.ModuleList([])
         for _ in range(depth):
@@ -66,12 +66,12 @@ class MAE(nn.Module):
         channels,
         masking_ratio = 0.75,
         decoder_dim=2048,
-        decoder_depth = 12,
-        decoder_heads = 8,
+        decoder_depth = 8,
+        decoder_heads = 12,
         decoder_dim_head = 64
     ):
         super().__init__()
-        assert masking_ratio > 0 and masking_ratio < 1, 'masking ratio must be kept between 0 and 1'
+        assert (masking_ratio == 'random') or (masking_ratio > 0 and masking_ratio < 1), 'masking ratio must be kept between 0 and 1'
         self.masking_ratio = masking_ratio
 
         num_patches = channels
@@ -85,20 +85,11 @@ class MAE(nn.Module):
         # decoder parameters
         self.decoder_dim = decoder_dim
         self.mask_token = nn.Parameter(torch.randn(decoder_dim))
-        self.decoder = Transformer(dim = decoder_dim, depth = decoder_depth, heads = decoder_heads, dim_head = decoder_dim_head, mlp_dim = decoder_dim * 4, dropout=0.5)
-        #self.to_pixels = nn.Linear(decoder_dim, pixel_values_per_patch)
+        self.decoder = Transformer(dim = decoder_dim, depth = decoder_depth, heads = decoder_heads, dim_head = decoder_dim_head, mlp_dim = decoder_dim * 4, dropout=0.1)
         self.to_pixels = nn.Sequential(nn.Linear(decoder_dim, pixel_values_per_patch), nn.ReLU())
-           
-        """
-        self.to_pixels = nn.Sequential(
-            nn.LayerNorm(decoder_dim),
-            nn.Linear(decoder_dim, 1536),
-            nn.ReLU(),
-            nn.Linear(1536, pixel_values_per_patch),
-            nn.ReLU()
-        )"""
+          
 
-    def forward(self, batch, masked_patch_idx=None):
+    def forward(self, batch, masked_patch_idx=None, fine_tune=True):
         img,mask,_  = batch
         device = img.device
         # get patches
@@ -112,16 +103,28 @@ class MAE(nn.Module):
         tokens = tokens + self.pos_embedding[:, 1:(num_patches + 1)]
         
         # calculate of patches needed to be masked, and get random indices, dividing it up for mask vs unmasked
-        num_masked = int(self.masking_ratio * num_patches)
-        rand_indices = torch.rand(batch, num_patches - 1, device = device).argsort(dim = -1) + 1 #never mask DAPI
+        if self.masking_ratio == 'random':
+            num_masked = np.random.randint(1,num_patches-1)
+        else:
+            num_masked = int(np.round(self.masking_ratio * num_patches))
+        rand_indices = torch.rand(batch, num_patches - 1, device = device).argsort(dim = -1) + 1
         masked_indices, unmasked_indices = rand_indices[:, :num_masked], rand_indices[:, num_masked:]
         
         #insert manually selected patches to mask
         if masked_patch_idx is not None:
-            assert len(masked_patch_idx) == num_masked, f'wrong number of masked patches chosen, expected {num_masked}'
+            assert len(masked_patch_idx) == num_masked, f'wrong number of masked patches chosen, expected {num_masked}, got {len(masked_patch_idx)}'
             unmasked_patch_idx = [idx for idx in range(num_patches) if idx not in masked_patch_idx]
             masked_indices = repeat(masked_patch_idx.clone(), 'd -> b d', b=batch)
             unmasked_indices = repeat(torch.tensor(unmasked_patch_idx), 'd -> b d', b=batch)
+        
+        elif fine_tune:
+            panel_order = [0, 13, 15, 6, 9, 7, 14, 2, 19, 1, 8, 18, 12, 5, 11, 4, 10, 3, 16, 17, 20]
+            num_masked = np.random.randint(1,num_patches-1)
+            unmasked_patch_idx = torch.tensor(panel_order[:num_patches - num_masked], device=device)
+            masked_patch_idx = torch.tensor([idx for idx in range(num_patches) if idx not in unmasked_patch_idx], device=device)
+            masked_indices = repeat(masked_patch_idx, 'd -> b d', b=batch)
+            unmasked_indices = repeat(unmasked_patch_idx, 'd -> b d', b=batch)
+            
             
         # get the unmasked tokens to be encoded
         batch_range = torch.arange(batch, device = device)[:, None]
