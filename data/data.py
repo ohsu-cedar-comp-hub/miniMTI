@@ -6,7 +6,21 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from skimage.io import imread
+from skimage.transform import rescale
 from einops import repeat, rearrange
+from process_aced_immune import get_channel_info
+keep_channels, keep_channels_idx, ch2idx = get_channel_info()
+original_set  =  ['DAPI1','CD8', 'CD4', 'FOXP3', 
+                'EPCAM', 'AR', 'CD11b', 'CD68', 
+                'CD56', 'NCR1', 'CK8', 'CD45', 
+                'aSMA', 'ERG', 'CD163', 'ChromA', 
+                'CK14', 'Tryp', 'Ki67', 'CD66b', 
+                'GZMB', 'ECAD', 'PD1', 'CK5', 
+                'VIM', 'FOSB', 'CD31', 'Tbr2', 
+                'CD45RA', 'NKX31', 'HLADRB1', 'CD3', 
+                'p53', 'CD45RO', 'FOXA1', 'AMACR', 
+                'CDX2', 'HOXB13', 'CD20', 'NOTCH1']
+REDUCED_SET_IDX = sorted([original_set.index(m) for m in keep_channels])
 
 
 class SingleCellDataset(Dataset):
@@ -22,11 +36,14 @@ class SingleCellDataset(Dataset):
     def __getitem__(self, idx):
         meta = self.metadata[idx]
         im = self.images[idx]
-        mask = self.masks[idx]   
-        num_channels = im.shape[-1]
+        mask = self.masks[idx]
+        im = rescale(im, 0.5, channel_axis=2, preserve_range=True)
+        mask = rescale(mask, 0.5, order=0)
         tensor = torch.from_numpy(im)
         tensor = rearrange(tensor, 'h w c -> c h w') 
         tensor = tensor.float()
+        #tensor = tensor[REDUCED_SET_IDX]
+        num_channels = tensor.shape[0]
 
         mask = torch.tensor(mask.astype('bool'))
         
@@ -92,7 +109,8 @@ def get_panel_selection_data(val_file, batch_size, dataset_size, remove_backgrou
         val_file = h5py.File(val_file[0])
         random.seed(123)  # Set the seed for reproducibility
         idx = np.arange(len(val_file['images']))
-        #random.shuffle(idx)
+        random.shuffle(idx)
+        idx = sorted(idx)
 
         # Calculate the number of files and the dataset size
         num_files = len(idx)
