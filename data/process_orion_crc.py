@@ -3,8 +3,8 @@ import h5py
 import numpy as np
 from skimage.io import imread
 import zarr, tifffile, dask.array as da
-from process_cedar_biolib_immune import norm_if
 from skimage.measure import regionprops
+from skimage.exposure import rescale_intensity
 from tqdm import tqdm
 from einops import repeat
 from cell_transformations import flip_mask, rotate_image
@@ -41,6 +41,19 @@ def get_channel_info():
 
     return keep_channels, keep_channels_idx, ch2idx
 
+def norm_if_channel(ch):
+    ch = np.log(ch)
+    ch[ch < 0] = 0
+    #ch = rescale_intensity(ch, in_range=(np.percentile(ch[ch>0], 0.1), np.percentile(ch[ch>0], 99.9)), out_range='uint8')
+    ch = rescale_intensity(ch, in_range=(np.percentile(ch, 0.1), np.percentile(ch, 99.9)), out_range='uint8')
+    return ch
+
+#normalize all IF channels
+def norm_if(IF):
+    output = np.empty(IF.shape, dtype='uint8')
+    for i,ch in tqdm(enumerate(IF)):
+        output[i] = norm_if_channel(ch)
+    return output
 
 def get_IF(sid):
     fname = f'/home/groups/ChangLab/wangmar/shift-panel-reduction/shift-panel-reduction-main/landmark_normalization/cycif-normalization-pipeline/command_line_script/final_script/new_normalized_crc_dataset/{sid}/{sid}_normalized.ome.tiff'
@@ -137,7 +150,8 @@ if __name__ == '__main__':
 
     save_dir =  '/home/groups/ChangLab/dataset/ORION-CRC'
     if not os.path.exists(save_dir): os.mkdir(save_dir)  
-    sample_ids = ['01','02','03','04','05','06']
+    #sample_ids = ['01','02','03','04','05','06']
+    sample_ids = ['05']
     
     for sample_id in sample_ids:
         sample_id = f'CRC{sample_id}'
