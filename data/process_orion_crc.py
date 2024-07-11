@@ -12,7 +12,7 @@ import math
 import gc
 
 
-def get_channel_info(tissue):
+def get_channel_info():
     """returns lists of channel names and indices that are going to be kept, as well as a dictionary mapping maker names to indices"""
     channels = [
         'DAPI',
