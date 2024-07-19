@@ -8,23 +8,13 @@ from torch.utils.data import Dataset, DataLoader
 from skimage.io import imread
 from skimage.transform import rescale
 from einops import repeat, rearrange
-from process_aced_immune import get_channel_info
-keep_channels, keep_channels_idx, ch2idx = get_channel_info()
-original_set  =  ['DAPI1','CD8', 'CD4', 'FOXP3', 
-                'EPCAM', 'AR', 'CD11b', 'CD68', 
-                'CD56', 'NCR1', 'CK8', 'CD45', 
-                'aSMA', 'ERG', 'CD163', 'ChromA', 
-                'CK14', 'Tryp', 'Ki67', 'CD66b', 
-                'GZMB', 'ECAD', 'PD1', 'CK5', 
-                'VIM', 'FOSB', 'CD31', 'Tbr2', 
-                'CD45RA', 'NKX31', 'HLADRB1', 'CD3', 
-                'p53', 'CD45RO', 'FOXA1', 'AMACR', 
-                'CDX2', 'HOXB13', 'CD20', 'NOTCH1']
-REDUCED_SET_IDX = sorted([original_set.index(m) for m in keep_channels])
+#from process_aced_immune import get_channel_info
+#keep_channels, keep_channels_idx, ch2idx = get_channel_info()
+
 
 
 class SingleCellDataset(Dataset):
-    def __init__(self, images, masks, metadata, remove_background=True):
+    def __init__(self, images, masks, metadata, remove_background=True, include_he=True):
         self.images = images
         self.masks = masks
         self.metadata = metadata
@@ -37,10 +27,12 @@ class SingleCellDataset(Dataset):
         meta = self.metadata[idx]
         im = self.images[idx]
         mask = self.masks[idx]
-        im = rescale(im, 0.5, channel_axis=2, preserve_range=True)
-        mask = rescale(mask, 0.5, order=0)
+        #im = rescale(im, 0.5, channel_axis=2, preserve_range=True)
+        #mask = rescale(mask, 0.5, order=0)
         tensor = torch.from_numpy(im)
         tensor = rearrange(tensor, 'h w c -> c h w') 
+        if include_he == False:
+            tensor = tensor[:-2] #cut off the last two channels (which are the H&E channels)
         tensor = tensor.float()
         #tensor = tensor[REDUCED_SET_IDX]
         num_channels = tensor.shape[0]
@@ -55,12 +47,12 @@ class SingleCellDataset(Dataset):
         return tensor, mask, meta
 
     
-def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, remove_background=True):
+def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, remove_background=True, include_he=True):
     train_file = h5py.File(train_file)
     val_file = h5py.File(val_file)
     
-    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], remove_background)
-    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], remove_background)
+    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], remove_background, include_he)
+    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], remove_background, include_he)
 
     train_loader = DataLoader(train_data, 
                        batch_size=batch_size, 
