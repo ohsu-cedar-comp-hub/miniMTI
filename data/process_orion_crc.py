@@ -45,7 +45,7 @@ def norm_if_channel(ch):
     ch = np.log(ch)
     ch[ch < 0] = 0
     #ch = rescale_intensity(ch, in_range=(np.percentile(ch[ch>0], 0.1), np.percentile(ch[ch>0], 99.9)), out_range='uint8')
-    ch = rescale_intensity(ch, in_range=(np.percentile(ch, 0.1), np.percentile(ch, 99.9)), out_range='uint8')
+    ch = rescale_intensity(ch, in_range=(np.percentile(ch, 5), np.percentile(ch, 99.9)), out_range='uint8')
     return ch
 
 #normalize all IF channels
@@ -150,8 +150,7 @@ if __name__ == '__main__':
 
     save_dir =  '/home/groups/ChangLab/dataset/ORION-CRC'
     if not os.path.exists(save_dir): os.mkdir(save_dir)  
-    #sample_ids = ['01','02','03','04','05','06']
-    sample_ids = ['05']
+    sample_ids = ['05','06']
     
     for sample_id in sample_ids:
         sample_id = f'CRC{sample_id}'
