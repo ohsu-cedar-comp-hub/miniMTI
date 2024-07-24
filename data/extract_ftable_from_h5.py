@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 from einops import repeat 
 
+
 path = '/home/groups/ChangLab/dataset/ORION-CRC/orion_crc_dataset_sid=CRC05.h5'
-save_fname = 'crc05_test3.csv'
+save_fname = 'CRC05_processed_feature_table.csv'
 f = h5py.File(path)
 
 ims = f['images'][:,:,:,:-2]
@@ -29,9 +30,11 @@ data = np.concatenate([mints, np.expand_dims(coords[0],1), np.expand_dims(coords
 
 channels = [
 'DAPI',
+#'AF1',
 'CD31',
 'CD45',
 'CD68',
+#'Argo550',
 'CD4',
 'FOXP3',
 'CD8a',
