@@ -9,10 +9,11 @@ Each dataset will have its own preprocessing script:
     
 These scripts will generate a series of HDF5 files with three datasets in each `images`, `masks`, and `metadata`. Each dataset is described in detail below:
   - `images`: dataset containing all 8 bit images centered around a single cell with shape=(N, H, W, C)
+     - NOTE: the number of channels per image (`C`) is equal to the number of biomarker channels in the IF image plus 3, because the H&E images (RGB) are concatenated to the end of each IF image.
   - `masks`: dataset containing the binary masks for the cell at the center of each image with shape=(N, H, W)
   - `metadata`: dataset containing strings that include the cell ID and (x,y) coordinates for the cell at the center of each image. string is formatted like so: `"{sample_name}-CellID-{rp.label}-x={center_x}-y={center_y}"`
 
-For training, we want to combine these HDF5 datasets so that batches cells selected from each sample. To create a set of  unified training and validation files, use the script `data/create_training_files.py` like so: 
+For training, these HDF5 datasets must be combined so that batches are constructed using cells selected from each sample. To create a set of unified training and validation files, use the script `data/create_training_files.py` like so: 
 `python create_training_file.py --data_dir </path/to/directory/containing/HDF5/files> --val_samples </path/to/text/file/listing/validation/samples.txt> --batch-name <name_for_validation_batch>` 
 details for the input parameters are below:
   - `data-dir`: this should be a path to a directory containing the HDF5 files, one per sample
