@@ -16,7 +16,7 @@ For training, we want to combine these HDF5 datasets so that batches cells selec
 `python create_training_file.py --data_dir </path/to/directory/containing/HDF5/files> --val_samples </path/to/text/file/listing/validation/samples.txt> --batch-name <name_for_validation_batch>` 
 details for the input parameters are below:
   - `data-dir`: this should be a path to a directory containing the HDF5 files, one per sample
-  - `val-samples`: You will need to create a .txt file that has one sample name per row that will be in the validation set. Every file not named in this file will be included in the training set. IMPORTANT: The sample names in this file must also be present in the filename of the HDF5 file for that sample. e.g. "CRC01" is the sample name for the file "orion_crc_dataset_sid=CRC01.h5"
+  - `val-samples`: You will need to create a .txt file that has one sample name per row that will be in the validation set. Every file not named in this file will be included in the training set. IMPORTANT: The sample names in this file must also be present in the filename of the HDF5 file for that sample. e.g. `"CRC01"` is the sample name for the file `"orion_crc_dataset_sid=CRC01.h5"`
   - `batch-name`: This should be a string used as and identifier for the validation set. It will be used to name the train and validation file like so: `"train-<batch-name>-out.h5"` `"val-<batch-name>.h5"` 
   
 ## Training
