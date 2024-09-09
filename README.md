@@ -6,7 +6,7 @@ Each dataset will have its own preprocessing script:
   - `python process_biolib_immune.py`
   - `python process_aced_immune.py`
   - `python process_crc_orion.py`
-  - 
+    
 These scripts will generate a series of HDF5 files with three datasets in each `images`, `masks`, and `metadata`. Each dataset is described in detail below:
   - `images`: dataset containing all 8 bit images centered around a single cell with shape=(N, H, W, C)
   - `masks`: dataset containing the binary masks for the cell at the center of each image with shape=(N, H, W)
