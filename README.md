@@ -6,13 +6,20 @@ Each dataset will have its own preprocessing script:
   - `python process_biolib_immune.py`
   - `python process_aced_immune.py`
   - `python process_crc_orion.py`
-These scripts will generate a series of HDF5 files with three datasets in each `images`, `masks`, and `metadata`. Each dataset is described in detail below:
+    
+These scripts will generate a series of HDF5 files, one for each sample, with three datasets in each: `images`, `masks`, and `metadata`. Each dataset is described in detail below:
   - `images`: dataset containing all 8 bit images centered around a single cell with shape=(N, H, W, C)
+     - NOTE: the number of channels per image (`C`) is equal to the number of biomarker channels in the IF image plus 3, because the H&E images (RGB) are concatenated to the end of each IF image.
   - `masks`: dataset containing the binary masks for the cell at the center of each image with shape=(N, H, W)
-  - `metadata`: dataset containing strings that include the cell ID and (x,y) coordinates for the cell at the center of each image. string is formatted like so: `"{sample_name}-CellID-{rp.label}-x={center_x}-y={center_y}"`
-For training, we want to combine these HDF5 datasets so that batches cells selected from each sample. To create a set of  unified training and validation files, use the script `data/create_training_files.py` like so: `python create_training_file.py --data_dir </path/to/directory/containing/HDF5/files> --val_samples </path/to/text/file/listing/validation/samples.txt> --batch-name <name_for_validation_batch>` details for the input parameters are below:
-  - `data-dir`: this should be a path to a directory containing the HDF5 files, one per sample
-  - `val-samples`: You will need to create a .txt file that has one sample name per row that will be in the validation set. Every file not named in this file will be included in the training set. IMPORTANT: The sample names in this file must also be present in the filename of the HDF5 file for that sample. e.g. "CRC01" is the sample name for the file "orion_crc_dataset_sid=CRC01.h5"
+  - `metadata`: dataset containing a list of strings that include the cell ID and (x,y) coordinates for the centroid of the cell at the center of each image with shape=(N,). Each string is formatted like so: `"<sample-name>-CellID-<Cell-ID>-x=<x-coordinate>-y=<y-coordinate>"`
+
+For training, these HDF5 datasets must be combined so that batches are constructed using cells selected from each sample. To create a set of unified training and validation files, use the script `data/create_training_files.py` like so: 
+`python create_training_file.py --data_dir </path/to/directory/containing/HDF5/files> --val_samples </path/to/text/file/listing/validation/samples.txt> --batch-name <name_for_validation_batch>` 
+details for the input parameters are below:
+  - `data-dir`: This should be a path to a directory containing the HDF5 files, one per sample
+  - `val-samples`: You will need to create a .txt file that has one sample name per row that will be in the validation set. Every file not named in this file will be included in the training set.
+     - IMPORTANT: The sample names in this file must also be present in the filename of the HDF5 file for that sample. e.g. `"CRC01"` is the sample name for the file `"orion_crc_dataset_sid=CRC01.h5"`
+  - `batch-name`: This should be a string used as an identifier for which files are included in the validation set. It will be used to name the train and validation file like so: `"train-<batch-name>-out.h5"` `"val-<batch-name>.h5"` 
   
 ## Training
 - `python run_training.py` will handle model training
