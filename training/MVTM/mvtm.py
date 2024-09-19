@@ -1,4 +1,5 @@
 import torch
+import math
 import numpy as np
 import torch.nn.functional as F
 import pytorch_lightning as pl
@@ -25,7 +26,38 @@ def load_vqgan(config, ckpt_path=None):
         sd = torch.load(ckpt_path, map_location="cpu")["state_dict"]
         model.load_state_dict(sd, strict=False)
     return model.eval()
+    
+def cosine_schedule_masking_ratio(u=None):
+    """
+    Returns a masking ratio sampled from a truncated arccos distribution.
+    
+    The density function is p(r) = (2/π) * (1 - r^2)^(-1/2), where r ∈ [0, 1].
+    This distribution has an expected masking rate of 0.64, with a bias towards higher masking rates.
+    
+    Returns:
+        float: A sampled masking ratio between 0 and 1.
+    """
+    # Sample a uniform value between 0 and 1
+    if u is None:
+        u = torch.rand(1).item()
+    
+    # Apply the inverse CDF of the truncated arccos distribution
+    r = math.sin(math.pi * u / 2)
+    
+    return r
 
+def get_unmask_schedule(num_tokens, T):
+    total_unmasked = 0
+    unmask_steps = []
+    for t in range(T):
+        mr = 1 - cosine_schedule_masking_ratio(u=(t+1)/T)
+        num_masked = int(mr * num_tokens)
+        num_unmasked = num_tokens - num_masked
+        num_to_unmask = num_unmasked - total_unmasked
+        unmask_steps.append(num_to_unmask)
+        total_unmasked += num_to_unmask
+    return list(reversed(unmask_steps))
+    
 class IF_MVTM(pl.LightningModule):
     def __init__(
         self,
@@ -99,7 +131,7 @@ class IF_MVTM(pl.LightningModule):
         return detok
         
     
-    def unmask(self, tokens, labels, logits, batch_size):
+    def unmask(self, tokens, labels, logits, batch_size, k):
         # Find all mask locations
         mask_locations = torch.where(labels != -100)
         # If there are no masks, return the original tokens
@@ -111,13 +143,14 @@ class IF_MVTM(pl.LightningModule):
         mask = (labels != -100).float()
         # Calculate the max probability for each position
         max_probs, _ = (scores * mask.unsqueeze(-1)).max(dim=2)
-        # Find the position of the most probable mask for each batch item
-        most_probable_positions = max_probs.argmax(dim=1)
+        # Find the positions of the K most probable masks for each batch item
+        K = int(min(k, mask.sum(dim=1).min().item()))  # Ensure K is not larger than the minimum number of masks in any batch item
+        top_k_probs, top_k_positions = torch.topk(max_probs, k=K, dim=1)
         # Create indices for gathering
-        batch_indices = torch.arange(batch_size, device=tokens.device)
+        batch_indices = torch.arange(batch_size, device=tokens.device).unsqueeze(1).expand(-1, K)
         # Decode the most probable masked token for each batch item
-        tokens[batch_indices, most_probable_positions] = logits[batch_indices, most_probable_positions].argmax(dim=1)
-        labels[batch_indices, most_probable_positions] = -100
+        tokens[batch_indices, top_k_positions] = logits[batch_indices, top_k_positions].argmax(dim=2)
+        labels[batch_indices, top_k_positions] = -100
         return tokens, labels
     
     def forward(self, x, masked_ch_idx=None):
@@ -150,9 +183,10 @@ class IF_MVTM(pl.LightningModule):
         type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device)*i for i in range(self.num_channels)]).long()
         position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_channels)]).long()
         
-        while labels is not None:
+        for k in get_unmask_schedule(self.vq_dim**2*len(masked_ch_idx), 10):
+            if k == 0: continue
             out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels)
-            input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size)
+            input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size, k)
         return out, input_ids, labels
                        
     def configure_optimizers(self):
@@ -170,7 +204,7 @@ class IF_MVTM(pl.LightningModule):
             labels[token_ids != self.mask_id] = -100
         else:
             seq_length = (self.vq_dim**2) * self.num_channels
-            num_masked = np.random.randint(1, self.num_channels - 1)
+            num_masked = int(cosine_schedule_masking_ratio() * ((self.vq_dim**2 * self.num_channels) - 1)) + 1
             rand_indices = torch.rand(token_ids.shape[0], self.num_channels, device=self.device).argsort(dim=-1)
             masked_indices = rand_indices[:, :num_masked]
             mask = torch.zeros((token_ids.shape[0], seq_length), dtype=torch.bool, device=self.device)
