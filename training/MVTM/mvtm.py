@@ -40,8 +40,10 @@ class IF_MVTM(pl.LightningModule):
         self.vq_f_dim=256
         
         vqvae_args = dict(num_codes=num_codes, num_channels=num_channels)
-        config_aced = load_config("/home/groups/ChangLab/simsz/latent-diffusion/src/taming-transformers/configs/custom_vqgan.yaml")
-        model_aced = load_vqgan(config_aced, ckpt_path="/home/groups/ChangLab/simsz/latent-diffusion/src/taming-transformers/vqgan-aced-ckpts/last.ckpt")
+        config_aced = load_config("/home/groups/ChangLab/govindsa/taming_transformers_backup/taming-transformers/configs/custom_vqgan.yaml")
+        model_aced = load_vqgan(config_aced, ckpt_path="/home/groups/ChangLab/govindsa/taming_transformers_backup/taming-transformers/vqgan-orion-ckpts/last.ckpt")
+        #config_aced = load_config("/home/groups/ChangLab/simsz/latent-diffusion/src/taming-transformers/configs/custom_vqgan.yaml")
+        #model_aced = load_vqgan(config_aced, ckpt_path="/home/groups/ChangLab/simsz/latent-diffusion/src/taming-transformers/vqgan-aced-ckpts/last.ckpt")
         self.tokenizer = model_aced
         
         self.mask_id = num_codes + 3
@@ -73,15 +75,36 @@ class IF_MVTM(pl.LightningModule):
         return self.tokenizer.decode(z)
     
     def decode(self, tokens, labels, logits, batch_size):
-        scores = F.softmax(logits, dim=2)
         mask_locations = torch.where(labels != -100)
+        scores = F.softmax(logits, dim=2)
         tokens[mask_locations] = logits[mask_locations].argmax(dim=1)
         output = rearrange(tokens, 'b (c h w) -> (b c) h w', c=self.num_channels, h=self.vq_dim)
         detok = self.detokenize(output, batch_size)
         detok = rearrange(detok, '(b c) 1 h w -> b c h w', c=self.num_channels)
         return detok
         
-        
+    
+    def unmask(self, tokens, labels, logits, batch_size):
+        # Find all mask locations
+        mask_locations = torch.where(labels != -100)
+        # If there are no masks, return the original tokens
+        if len(mask_locations[0]) == 0:
+            return tokens, None
+        # Calculate softmax scores
+        scores = F.softmax(logits, dim=2)
+        # Create a mask tensor
+        mask = (labels != -100).float()
+        # Calculate the max probability for each position
+        max_probs, _ = (scores * mask.unsqueeze(-1)).max(dim=2)
+        # Find the position of the most probable mask for each batch item
+        most_probable_positions = max_probs.argmax(dim=1)
+        # Create indices for gathering
+        batch_indices = torch.arange(batch_size, device=tokens.device)
+        # Decode the most probable masked token for each batch item
+        tokens[batch_indices, most_probable_positions] = logits[batch_indices, most_probable_positions].argmax(dim=1)
+        labels[batch_indices, most_probable_positions] = -100
+        return tokens, labels
+    
     def forward(self, x, masked_ch_idx=None):
         batch_size = x.shape[0]
         device = x.device
@@ -98,13 +121,30 @@ class IF_MVTM(pl.LightningModule):
         out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels)
         
         return out, token_ids, labels
+    
+    def predict(self, x, masked_ch_idx=None):
+        batch_size = x.shape[0]
+        device = x.device
+        with torch.no_grad():
+            x = rearrange(x, 'b c h w -> (b c) 1 h w')
+            token_ids = self.tokenize(x)
+            token_ids = token_ids.reshape(batch_size,self.num_channels * (self.vq_dim**2))
+        
+        input_ids, labels = self.mask_channels(token_ids.clone(), masked_ch_idx=masked_ch_idx)
+        
+        type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device)*i for i in range(self.num_channels)]).long()
+        position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_channels)]).long()
+        
+        while labels is not None:
+            out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels)
+            input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size)
+        return out, input_ids, labels
                        
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         def linear_lr_schedule(epoch):
             return 1 - epoch / self.trainer.max_epochs
-
         scheduler = LambdaLR(optimizer, lr_lambda=linear_lr_schedule)
         return [optimizer], [scheduler]
   
@@ -151,25 +191,4 @@ class IF_MVTM(pl.LightningModule):
     def validation_step(self, val_batch,  val_idx):
         gt, mask, meta = val_batch
         out, token_ids, labels = self(gt)
-
-        pred = self.decode(token_ids, labels, out['logits'], batch_size=gt.shape[0])
-        
-        mask = mask.bool()
-        mask = repeat(mask,'b h w -> b c h w', c=pred.shape[1])
-        mints = (gt * mask).sum(dim=(2,3)) / mask.sum(dim=(2,3))
-        pmints = (pred * mask).sum(dim=(2,3)) / mask.sum(dim=(2,3))
-        if mints.shape[1] == 1:
-            spearman_corr = spearman(pmints.squeeze(), mints.squeeze())
-            sperman_corr = spearman_corr.unsqueeze(0)
-        else:
-            spearman_corr = spearman(pmints, mints) 
-        spearman_corr = spearman_corr.mean()
-
-        ssim_score = ssim(gt, pred)
-        self.logger.log_image(key="Val reconstruction", 
-                       images=[pred[0][0].cpu().detach().numpy(),gt[0][0].cpu().detach().numpy()], 
-                       caption=["pred", "gt"])
-        
         self.log('val_loss', out['loss'], sync_dist=True)
-        self.log('val_ssim', ssim_score, sync_dist=True)
-        self.log('val_spearman', spearman_corr, sync_dist=True)
