@@ -8,18 +8,18 @@ from torch.utils.data import Dataset, DataLoader
 from skimage.io import imread
 from skimage.transform import rescale
 from einops import repeat, rearrange
-#from process_aced_immune import get_channel_info
-#keep_channels, keep_channels_idx, ch2idx = get_channel_info()
 
 
 
 class SingleCellDataset(Dataset):
-    def __init__(self, images, masks, metadata, remove_background=True, include_he=True):
+    def __init__(self, images, masks, metadata, downscale=False, remove_background=False, remove_he=True):
         self.images = images
         self.masks = masks
         self.metadata = metadata
         self.remove_background =remove_background
-        
+        self.include_he = include_he
+        self.downsample = downsample
+
     def __len__(self):
         return len(self.images)
 
@@ -27,14 +27,14 @@ class SingleCellDataset(Dataset):
         meta = self.metadata[idx]
         im = self.images[idx]
         mask = self.masks[idx]
-        #im = rescale(im, 0.5, channel_axis=2, preserve_range=True)
-        #mask = rescale(mask, 0.5, order=0)
+        if self.downscale:
+            im = rescale(im, 0.5, channel_axis=2, preserve_range=True)
+            mask = rescale(mask, 0.5, order=0)
         tensor = torch.from_numpy(im)
         tensor = rearrange(tensor, 'h w c -> c h w') 
-        if include_he == False:
-            tensor = tensor[:-2] #cut off the last two channels (which are the H&E channels)
+        if self.remove_he:
+            tensor = tensor[:-3] #cut off the last three channels (which are the H&E channels)
         tensor = tensor.float()
-        #tensor = tensor[REDUCED_SET_IDX]
         num_channels = tensor.shape[0]
 
         mask = torch.tensor(mask.astype('bool'))
@@ -43,16 +43,16 @@ class SingleCellDataset(Dataset):
             mask = repeat(mask, 'h w -> c h w', c=num_channels)
             tensor[mask == 0] = 0
             mask = mask[0]
-            
+        tensor = (tensor / 127.5) - 1.0   
         return tensor, mask, meta
 
     
-def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, remove_background=True, include_he=True):
+def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, downscale=False, remove_background=False, remove_he=True):
     train_file = h5py.File(train_file)
     val_file = h5py.File(val_file)
     
-    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], remove_background, include_he)
-    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], remove_background, include_he)
+    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], downsample, remove_background, include_he)
+    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], downsample, remove_background, include_he)
 
     train_loader = DataLoader(train_data, 
                        batch_size=batch_size, 
@@ -70,7 +70,7 @@ def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, rem
     return train_loader, val_loader 
 
 
-def get_panel_selection_data(val_file, batch_size, dataset_size, remove_background):
+def get_panel_selection_data(val_file, batch_size, dataset_size, remove_background, include_he=True, shuffle=True):
 
     """
     Retrieves a DataLoader for validation datasets in CRC dataset.
@@ -101,7 +101,8 @@ def get_panel_selection_data(val_file, batch_size, dataset_size, remove_backgrou
         val_file = h5py.File(val_file[0])
         random.seed(123)  # Set the seed for reproducibility
         idx = np.arange(len(val_file['images']))
-        random.shuffle(idx)
+        if shuffle:
+            random.shuffle(idx)
         idx = sorted(idx)
 
         # Calculate the number of files and the dataset size
@@ -125,7 +126,7 @@ def get_panel_selection_data(val_file, batch_size, dataset_size, remove_backgrou
 
         # for now, use False for remove_background
         print("-- Loading the dataset into dataloader")
-        val_data = SingleCellDataset(val_file['images'][idx], val_file['masks'][idx], val_file['metadata'][idx], remove_background)
+        val_data = SingleCellDataset(val_file['images'][idx], val_file['masks'][idx], val_file['metadata'][idx], remove_background, include_he)
         val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False, num_workers=1, persistent_workers=True, pin_memory=True)
         return val_loader
         
