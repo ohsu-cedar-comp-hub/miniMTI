@@ -51,8 +51,8 @@ def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, dow
     train_file = h5py.File(train_file)
     val_file = h5py.File(val_file)
     
-    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], downsample, remove_background, include_he)
-    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], downsample, remove_background, include_he)
+    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], downscale, remove_background, remove_he)
+    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], downscale, remove_background, remove_he)
 
     train_loader = DataLoader(train_data, 
                        batch_size=batch_size, 
@@ -70,7 +70,7 @@ def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, dow
     return train_loader, val_loader 
 
 
-def get_panel_selection_data(val_file, batch_size, dataset_size, remove_background, include_he=True, shuffle=True):
+def get_panel_selection_data(val_file, batch_size, dataset_size, remove_background=False, downscale=False, remove_he=True, shuffle=True):
 
     """
     Retrieves a DataLoader for validation datasets in CRC dataset.
@@ -126,7 +126,7 @@ def get_panel_selection_data(val_file, batch_size, dataset_size, remove_backgrou
 
         # for now, use False for remove_background
         print("-- Loading the dataset into dataloader")
-        val_data = SingleCellDataset(val_file['images'][idx], val_file['masks'][idx], val_file['metadata'][idx], remove_background, include_he)
+        val_data = SingleCellDataset(val_file['images'][idx], val_file['masks'][idx], val_file['metadata'][idx], downscale, remove_background, remove_he)
         val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False, num_workers=1, persistent_workers=True, pin_memory=True)
         return val_loader
         
