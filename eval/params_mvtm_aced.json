@@ -1,0 +1,12 @@
+{"lr":1e-4,
+ "weight_decay":0.001,
+ "num_channels":40,
+"num_layers":24,
+"num_heads":8,
+"latent_dim":768,
+"num_codes":256,
+"vq_dim":4,
+"vq_f_dim":4,
+"config_path":"/home/groups/ChangLab/simsz/latent-diffusion/src/taming-transformers/configs/custom_vqgan2.yaml",
+"ckpt_path":"/home/groups/ChangLab/simsz/latent-diffusion/src/taming-transformers/vqgan-aced-ckpts/last-v1.ckpt"
+}
