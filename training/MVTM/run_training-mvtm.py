@@ -18,9 +18,10 @@ parser.add_argument('--vq-f-dim', type=int, default=256, help='Feature dimension
 parser.add_argument('--train-file', type=str, default='/mnt/scratch/ORION-CRC-Unnormalized/train-CRC05-06-out.h5', help='Path to the training dataset file')
 parser.add_argument('--val-file', type=str, default='/mnt/scratch/ORION-CRC-Unnormalized/orion_crc_dataset_sid=CRC05.h5', help='Path to the validation dataset file')
 parser.add_argument('--remove-he', action='store_true', help="remove last three channels if H&E is stored with IF")
-pareser.add_argument('--downscale', action='store_true', help"downscale images 2x")
-parser.add_argument('--codebook-sze', type=int, default=1024, help="number of VQ codes")
+parser.add_argument('--downscale', action='store_true', help="downscale images 2x")
+parser.add_argument('--codebook-size', type=int, default=1024, help="number of VQ codes")
 parser.add_argument('--num-channels', type=int, required=True, help="number of channels per image")
+parser.add_argument('--num-gpus', type=int, required=True, help="number of GPUs to use")
 args = parser.parse_args()
 
 def get_ckpt(ckpt_id):
@@ -30,7 +31,7 @@ def get_ckpt(ckpt_id):
     print('finished get_ckpt stage')
     return f"{dir_}/{fname}"
 
-def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, codebook_size, num_channels):
+def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, codebook_size, num_channels, num_gpus):
     print('entered train model')
     NUM_EPOCHS = 100
     BATCH_SIZE = 32
@@ -65,7 +66,7 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
 
     trainer = pl.Trainer(
         accelerator='gpu',
-        devices=8,
+        devices=num_gpus,
         logger=wandb_logger,
         callbacks=[checkpoint_callback],
         max_epochs=NUM_EPOCHS,
@@ -80,4 +81,4 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
     trainer.fit(model, train_loader, val_loader)
 
 if __name__ == '__main__':
-    train_model(args.config_path, args.ckpt_path, args.vq_dim, args.vq_f_dim, args.remove_he, args.downscale, args.codebook_size, args.num_channels)
+    train_model(args.config_path, args.ckpt_path, args.vq_dim, args.vq_f_dim, args.remove_he, args.downscale, args.codebook_size, args.num_channels, args.num_gpus)

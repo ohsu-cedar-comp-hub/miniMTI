@@ -17,8 +17,8 @@ class SingleCellDataset(Dataset):
         self.masks = masks
         self.metadata = metadata
         self.remove_background =remove_background
-        self.include_he = include_he
-        self.downsample = downsample
+        self.remove_he = remove_he
+        self.downscale = downscale
 
     def __len__(self):
         return len(self.images)
