@@ -183,7 +183,9 @@ class IF_MVTM(pl.LightningModule):
         type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device)*i for i in range(self.num_channels)]).long()
         position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_channels)]).long()
         
-        for k in get_unmask_schedule(self.vq_dim**2*len(masked_ch_idx), 10):
+        T = 30
+        unmask_schedule = get_unmask_schedule(self.vq_dim**2 * len(masked_ch_idx), T)
+        for k in unmask_schedule:
             if k == 0: continue
             out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels)
             input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size, k)
