@@ -83,10 +83,10 @@ class IF_MVTM(pl.LightningModule):
         self.vq_f_dim = vq_f_dim     # use passed vq_f_dim argument
 
         # Load VQGAN model
-        config_aced = load_config(config_path)   # use passed config_path argument
-        model_aced = load_vqgan(config_aced, ckpt_path=ckpt_path)  # use passed ckpt_path argument
+        config = load_config(config_path)   # use passed config_path argument
+        model = load_vqgan(config, ckpt_path=ckpt_path)  # use passed ckpt_path argument
 
-        self.tokenizer = model_aced
+        self.tokenizer = model
 
         self.mask_id = num_codes + 3
 
@@ -166,11 +166,11 @@ class IF_MVTM(pl.LightningModule):
         type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device) * i for i in range(self.num_channels)]).long()
         position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_channels)]).long()
 
-        out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels)
+        out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels, output_attentions=True)
         
         return out, token_ids, labels
     
-    def predict(self, x, masked_ch_idx=None):
+    def predict(self, x, masked_ch_idx=None, T=10):
         batch_size = x.shape[0]
         device = x.device
         with torch.no_grad():
@@ -183,11 +183,10 @@ class IF_MVTM(pl.LightningModule):
         type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device)*i for i in range(self.num_channels)]).long()
         position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_channels)]).long()
         
-        T = 30
         unmask_schedule = get_unmask_schedule(self.vq_dim**2 * len(masked_ch_idx), T)
         for k in unmask_schedule:
             if k == 0: continue
-            out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels)
+            out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels, output_attentions=True)
             input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size, k)
         return out, input_ids, labels
                        
@@ -205,17 +204,13 @@ class IF_MVTM(pl.LightningModule):
             labels = token_ids.clone()
             labels[token_ids != self.mask_id] = -100
         else:
-            seq_length = (self.vq_dim**2) * self.num_channels
+            seq_length = self.vq_dim**2 * self.num_channels
+            batch_size = token_ids.shape[0]
             num_masked = int(cosine_schedule_masking_ratio() * ((self.vq_dim**2 * self.num_channels) - 1)) + 1
-            rand_indices = torch.rand(token_ids.shape[0], self.num_channels, device=self.device).argsort(dim=-1)
+            rand_indices = torch.stack([torch.randperm(seq_length, device=self.device) for _ in range(batch_size)])
             masked_indices = rand_indices[:, :num_masked]
-            mask = torch.zeros((token_ids.shape[0], seq_length), dtype=torch.bool, device=self.device)
-            start_positions = masked_indices * self.vq_dim**2
-            offsets = torch.arange(self.vq_dim**2, device=self.device).unsqueeze(0).unsqueeze(0)
-            expanded_start_positions = start_positions.unsqueeze(-1) + offsets
-            expanded_start_positions = expanded_start_positions.view(token_ids.shape[0], -1)
-            mask.scatter_(1, expanded_start_positions, True)
-        
+            mask = torch.zeros((batch_size, seq_length), dtype=torch.bool, device=self.device)
+            mask.scatter_(1, masked_indices, True)
             labels = token_ids.clone()
             labels[~mask] = -100
             token_ids[mask] = self.mask_id
