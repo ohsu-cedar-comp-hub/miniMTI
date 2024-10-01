@@ -19,6 +19,7 @@ parser.add_argument('--train-file', type=str, default='/mnt/scratch/ORION-CRC-Un
 parser.add_argument('--val-file', type=str, default='/mnt/scratch/ORION-CRC-Unnormalized/orion_crc_dataset_sid=CRC05.h5', help='Path to the validation dataset file')
 parser.add_argument('--remove-he', action='store_true', help="remove last three channels if H&E is stored with IF")
 parser.add_argument('--downscale', action='store_true', help="downscale images 2x")
+parser.add_argument('--deconvolve-he', action='store_true', help="downscale he")
 parser.add_argument('--codebook-size', type=int, default=1024, help="number of VQ codes")
 parser.add_argument('--num-channels', type=int, required=True, help="number of channels per image")
 parser.add_argument('--num-gpus', type=int, required=True, help="number of GPUs to use")
@@ -31,23 +32,23 @@ def get_ckpt(ckpt_id):
     print('finished get_ckpt stage')
     return f"{dir_}/{fname}"
 
-def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, codebook_size, num_channels, num_gpus):
+def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, codebook_size, num_channels, num_gpus, deconvolve_he):
     print('entered train model')
     NUM_EPOCHS = 100
-    BATCH_SIZE = 32
+    BATCH_SIZE = 128
     NUM_VAL_SAMPLES = 10_000
     train_file=args.train_file
     val_file=args.val_file
     print('Before train_loader')
-    train_loader, val_loader = get_train_dataloaders(train_file, val_file, BATCH_SIZE, NUM_VAL_SAMPLES, remove_he=remove_he, downscale=downscale)
+    train_loader, val_loader = get_train_dataloaders(train_file, val_file, BATCH_SIZE, NUM_VAL_SAMPLES, remove_he=remove_he, downscale=downscale, deconvolve_he=deconvolve_he)
     print('after train loader')
 
     params = dict(
         lr=1e-5,
         weight_decay=0,
         num_channels=num_channels,
-        num_layers=24,
-        num_heads=8,
+        num_layers=12,
+        num_heads=12,
         latent_dim=768,
         num_codes=codebook_size,
         config_path=config_path,
@@ -81,4 +82,4 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
     trainer.fit(model, train_loader, val_loader)
 
 if __name__ == '__main__':
-    train_model(args.config_path, args.ckpt_path, args.vq_dim, args.vq_f_dim, args.remove_he, args.downscale, args.codebook_size, args.num_channels, args.num_gpus)
+    train_model(args.config_path, args.ckpt_path, args.vq_dim, args.vq_f_dim, args.remove_he, args.downscale, args.codebook_size, args.num_channels, args.num_gpus, args.deconvolve_he)
