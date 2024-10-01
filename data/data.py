@@ -12,13 +12,14 @@ from einops import repeat, rearrange
 
 
 class SingleCellDataset(Dataset):
-    def __init__(self, images, masks, metadata, downscale=False, remove_background=False, remove_he=True):
+    def __init__(self, images, masks, metadata, downscale=False, remove_background=False, remove_he=True, deconvolve_he=False):
         self.images = images
         self.masks = masks
         self.metadata = metadata
         self.remove_background =remove_background
         self.remove_he = remove_he
         self.downscale = downscale
+        self.deconvolve_he = deconvolve_he
 
     def __len__(self):
         return len(self.images)
@@ -34,6 +35,20 @@ class SingleCellDataset(Dataset):
         tensor = rearrange(tensor, 'h w c -> c h w') 
         if self.remove_he:
             tensor = tensor[:-3] #cut off the last three channels (which are the H&E channels)
+        else:
+            if self.deconvolve_he:
+                he = tensor[-3:]
+                import histomicstk as htk
+                stain_color_map = htk.preprocessing.color_deconvolution.stain_color_map
+                # specify stains of input image
+                stains = ['hematoxylin',  # nuclei stain
+                          'eosin',        # cytoplasm stain
+                          'null']         # set to null if input contains only two stains
+                W = np.array([stain_color_map[st] for st in stains]).T
+                imDeconvolved = htk.preprocessing.color_deconvolution.color_deconvolution(he, W)
+                he = imDeconvolved.Stains[:,:,:2]
+                tensor = np.concatenate([tensor[:-3], he], axis=0) #restack IF channels and deconvolved H and E channels
+            
         tensor = tensor.float()
         num_channels = tensor.shape[0]
 
@@ -47,12 +62,12 @@ class SingleCellDataset(Dataset):
         return tensor, mask, meta
 
     
-def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, downscale=False, remove_background=False, remove_he=True):
+def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, downscale=False, remove_background=False, remove_he=True, deconvolve_he=False):
     train_file = h5py.File(train_file)
     val_file = h5py.File(val_file)
     
-    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], downscale, remove_background, remove_he)
-    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], downscale, remove_background, remove_he)
+    train_data = SingleCellDataset(train_file['images'], train_file['masks'], train_file['metadata'], downscale, remove_background, remove_he, deconvolve_he)
+    val_data = SingleCellDataset(val_file['images'], val_file['masks'], val_file['metadata'], downscale, remove_background, remove_he, deconvolve_he)
 
     train_loader = DataLoader(train_data, 
                        batch_size=batch_size, 
@@ -70,7 +85,7 @@ def get_train_dataloaders(train_file, val_file, batch_size, num_val_samples, dow
     return train_loader, val_loader 
 
 
-def get_panel_selection_data(val_file, batch_size, dataset_size, remove_background=False, downscale=False, remove_he=True, shuffle=True):
+def get_panel_selection_data(val_file, batch_size, dataset_size, remove_background=False, downscale=False, remove_he=True, deconvolve_he=False, shuffle=True):
 
     """
     Retrieves a DataLoader for validation datasets in CRC dataset.
@@ -126,7 +141,7 @@ def get_panel_selection_data(val_file, batch_size, dataset_size, remove_backgrou
 
         # for now, use False for remove_background
         print("-- Loading the dataset into dataloader")
-        val_data = SingleCellDataset(val_file['images'][idx], val_file['masks'][idx], val_file['metadata'][idx], downscale, remove_background, remove_he)
+        val_data = SingleCellDataset(val_file['images'][idx], val_file['masks'][idx], val_file['metadata'][idx], downscale, remove_background, remove_he, deconvolve_he)
         val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False, num_workers=1, persistent_workers=True, pin_memory=True)
         return val_loader
         
