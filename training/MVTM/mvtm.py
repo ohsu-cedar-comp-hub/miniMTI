@@ -46,17 +46,21 @@ def cosine_schedule_masking_ratio(u=None):
     
     return r
 
-def get_unmask_schedule(num_tokens, T):
+def get_unmask_schedule(num_tokens, T, schedule='cosine'):
+    if schedule == 'cosine':
+        scheduler = cosine_schedule_masking_ratio
+    elif schedule == 'linear':
+        scheduler = lambda u:u
+        
     total_unmasked = 0
     unmask_steps = []
     for t in range(T):
-        mr = 1 - cosine_schedule_masking_ratio(u=(t+1)/T)
-        num_masked = int(mr * num_tokens)
-        num_unmasked = num_tokens - num_masked
-        num_to_unmask = num_unmasked - total_unmasked
-        unmask_steps.append(num_to_unmask)
+        unmask_ratio = 1 - scheduler(u= (T - (t + 1))/T)
+        num_to_unmask = int(unmask_ratio * num_tokens) - total_unmasked
         total_unmasked += num_to_unmask
-    return list(reversed(unmask_steps))
+        unmask_steps.append(num_to_unmask)
+        
+    return unmask_steps
     
 class IF_MVTM(pl.LightningModule):
     def __init__(
@@ -87,7 +91,6 @@ class IF_MVTM(pl.LightningModule):
         model = load_vqgan(config, ckpt_path=ckpt_path)  # use passed ckpt_path argument
 
         self.tokenizer = model
-
         self.mask_id = num_codes + 3
 
         config = RobertaConfig(
@@ -106,8 +109,6 @@ class IF_MVTM(pl.LightningModule):
         
         self.mvtm = RobertaForMaskedLM(config)
 
-
-        
     def tokenize(self, x):
         z, _, [_, _, indices] = self.tokenizer.encode(x)
         return indices + 3
@@ -120,25 +121,43 @@ class IF_MVTM(pl.LightningModule):
         )
         z = z.reshape([batch_size * self.num_channels, self.vq_f_dim, self.vq_dim, self.vq_dim])
         return self.tokenizer.decode(z)
-    
-    def decode(self, tokens, labels, logits, batch_size):
-        mask_locations = torch.where(labels != -100)
-        scores = F.softmax(logits, dim=2)
-        tokens[mask_locations] = logits[mask_locations].argmax(dim=1)
-        output = rearrange(tokens, 'b (c h w) -> (b c) h w', c=self.num_channels, h=self.vq_dim)
-        detok = self.detokenize(output, batch_size)
-        detok = rearrange(detok, '(b c) 1 h w -> b c h w', c=self.num_channels)
-        return detok
         
-    
-    def unmask(self, tokens, labels, logits, batch_size, k):
+    def mask_channels(self, token_ids, masked_ch_idx=None):
+        if masked_ch_idx is not None:
+            for channel_i in masked_ch_idx:
+                token_ids[:, self.vq_dim**2 * channel_i:self.vq_dim**2 * (channel_i + 1)] = self.mask_id
+            labels = token_ids.clone()
+            labels[token_ids != self.mask_id] = -100
+        else:
+            seq_length = (self.vq_dim**2) * self.num_channels
+            num_masked = int(cosine_schedule_masking_ratio() * ((self.vq_dim**2 * self.num_channels) - 1)) + 1
+            rand_indices = torch.rand(token_ids.shape[0], self.num_channels, device=self.device).argsort(dim=-1)
+            masked_indices = rand_indices[:, :num_masked]
+            mask = torch.zeros((token_ids.shape[0], seq_length), dtype=torch.bool, device=self.device)
+            start_positions = masked_indices * self.vq_dim**2
+            offsets = torch.arange(self.vq_dim**2, device=self.device).unsqueeze(0).unsqueeze(0)
+            expanded_start_positions = start_positions.unsqueeze(-1) + offsets
+            expanded_start_positions = expanded_start_positions.view(token_ids.shape[0], -1)
+            mask.scatter_(1, expanded_start_positions, True)
+        
+            labels = token_ids.clone()
+            labels[~mask] = -100
+            token_ids[mask] = self.mask_id
+
+        return token_ids, labels
+        
+    def unmask(self, tokens, labels, logits, batch_size, k, temp=1.0):
         # Find all mask locations
         mask_locations = torch.where(labels != -100)
         # If there are no masks, return the original tokens
         if len(mask_locations[0]) == 0:
             return tokens, None
-        # Calculate softmax scores
-        scores = F.softmax(logits, dim=2)
+        # Apply temperature to logits if temperature is not 0
+        if temperature == 0:
+            scores = F.softmax(logits, dim=2)
+        else:
+            scaled_logits = logits / temperature
+            scores = F.softmax(scaled_logits, dim=2)
         # Create a mask tensor
         mask = (labels != -100).float()
         # Calculate the max probability for each position
@@ -148,8 +167,17 @@ class IF_MVTM(pl.LightningModule):
         top_k_probs, top_k_positions = torch.topk(max_probs, k=K, dim=1)
         # Create indices for gathering
         batch_indices = torch.arange(batch_size, device=tokens.device).unsqueeze(1).expand(-1, K)
-        # Decode the most probable masked token for each batch item
-        tokens[batch_indices, top_k_positions] = logits[batch_indices, top_k_positions].argmax(dim=2)
+        if temperature == 0:
+            # Use greedy decoding (argmax) when temperature is 0
+            selected_tokens = logits[batch_indices, top_k_positions].argmax(dim=2)
+        else:
+            # Sample from the distribution for non-zero temperatures
+            # Reshape the scores for multinomial sampling
+            flattened_scores = scores[batch_indices, top_k_positions].view(-1, scores.size(-1))
+            sampled_indices = torch.multinomial(flattened_scores, num_samples=1).view(batch_size, K)
+            selected_tokens = sampled_indices
+        # Update tokens with selected values
+        tokens[batch_indices, top_k_positions] = selected_tokens
         labels[batch_indices, top_k_positions] = -100
         return tokens, labels
     
@@ -170,7 +198,7 @@ class IF_MVTM(pl.LightningModule):
         
         return out, token_ids, labels
     
-    def predict(self, x, masked_ch_idx=None, T=10):
+    def predict(self, x, masked_ch_idx=None, T=10, temp=1.0, schedule='cosine'):
         batch_size = x.shape[0]
         device = x.device
         with torch.no_grad():
@@ -183,11 +211,11 @@ class IF_MVTM(pl.LightningModule):
         type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device)*i for i in range(self.num_channels)]).long()
         position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_channels)]).long()
         
-        unmask_schedule = get_unmask_schedule(self.vq_dim**2 * len(masked_ch_idx), T)
+        unmask_schedule = get_unmask_schedule(self.vq_dim**2 * len(masked_ch_idx), T, schedule=schedule)
         for k in unmask_schedule:
             if k == 0: continue
             out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels, output_attentions=True)
-            input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size, k)
+            input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size, k, temp=temp)
         return out, input_ids, labels
                        
     def configure_optimizers(self):
@@ -196,26 +224,6 @@ class IF_MVTM(pl.LightningModule):
             return 1 - epoch / self.trainer.max_epochs
         scheduler = LambdaLR(optimizer, lr_lambda=linear_lr_schedule)
         return [optimizer], [scheduler]
-  
-    def mask_channels(self, token_ids, masked_ch_idx=None):
-        if masked_ch_idx is not None:
-            for channel_i in masked_ch_idx:
-                token_ids[:, self.vq_dim**2 * channel_i:self.vq_dim**2 * (channel_i + 1)] = self.mask_id
-            labels = token_ids.clone()
-            labels[token_ids != self.mask_id] = -100
-        else:
-            seq_length = self.vq_dim**2 * self.num_channels
-            batch_size = token_ids.shape[0]
-            num_masked = int(cosine_schedule_masking_ratio() * ((self.vq_dim**2 * self.num_channels) - 1)) + 1
-            rand_indices = torch.stack([torch.randperm(seq_length, device=self.device) for _ in range(batch_size)])
-            masked_indices = rand_indices[:, :num_masked]
-            mask = torch.zeros((batch_size, seq_length), dtype=torch.bool, device=self.device)
-            mask.scatter_(1, masked_indices, True)
-            labels = token_ids.clone()
-            labels[~mask] = -100
-            token_ids[mask] = self.mask_id
-
-        return token_ids, labels
         
     def training_step(self, train_batch, batch_idx):
         gt, mask, meta = train_batch
