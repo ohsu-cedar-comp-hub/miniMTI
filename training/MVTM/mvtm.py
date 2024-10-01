@@ -153,10 +153,10 @@ class IF_MVTM(pl.LightningModule):
         if len(mask_locations[0]) == 0:
             return tokens, None
         # Apply temperature to logits if temperature is not 0
-        if temperature == 0:
+        if temp == 0:
             scores = F.softmax(logits, dim=2)
         else:
-            scaled_logits = logits / temperature
+            scaled_logits = logits / temp
             scores = F.softmax(scaled_logits, dim=2)
         # Create a mask tensor
         mask = (labels != -100).float()
@@ -167,7 +167,7 @@ class IF_MVTM(pl.LightningModule):
         top_k_probs, top_k_positions = torch.topk(max_probs, k=K, dim=1)
         # Create indices for gathering
         batch_indices = torch.arange(batch_size, device=tokens.device).unsqueeze(1).expand(-1, K)
-        if temperature == 0:
+        if temp == 0:
             # Use greedy decoding (argmax) when temperature is 0
             selected_tokens = logits[batch_indices, top_k_positions].argmax(dim=2)
         else:
