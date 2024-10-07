@@ -75,13 +75,15 @@ class IF_MVTM(pl.LightningModule):
         config_path,   # added config_path argument
         ckpt_path,     # added ckpt_path argument
         vq_dim,        # added vq_dim argument
-        vq_f_dim       # added vq_f_dim argument
+        vq_f_dim,
+        full_channel_mask=False# added vq_f_dim argument
     ):
         super().__init__() 
         
         self.lr = lr
         self.weight_decay = weight_decay
         self.num_channels = num_channels
+        self.full_channel_mask = full_channel_mask
 
         self.vq_dim = vq_dim         # use passed vq_dim argument
         self.vq_f_dim = vq_f_dim     # use passed vq_f_dim argument
@@ -128,9 +130,9 @@ class IF_MVTM(pl.LightningModule):
                 token_ids[:, self.vq_dim**2 * channel_i:self.vq_dim**2 * (channel_i + 1)] = self.mask_id
             labels = token_ids.clone()
             labels[token_ids != self.mask_id] = -100
-        else:
+        elif self.full_channel_mask:
             seq_length = (self.vq_dim**2) * self.num_channels
-            num_masked = int(cosine_schedule_masking_ratio() * ((self.vq_dim**2 * self.num_channels) - 1)) + 1
+            num_masked = int(cosine_schedule_masking_ratio() * (self.num_channels - 1)) + 1
             rand_indices = torch.rand(token_ids.shape[0], self.num_channels, device=self.device).argsort(dim=-1)
             masked_indices = rand_indices[:, :num_masked]
             mask = torch.zeros((token_ids.shape[0], seq_length), dtype=torch.bool, device=self.device)
@@ -139,11 +141,20 @@ class IF_MVTM(pl.LightningModule):
             expanded_start_positions = start_positions.unsqueeze(-1) + offsets
             expanded_start_positions = expanded_start_positions.view(token_ids.shape[0], -1)
             mask.scatter_(1, expanded_start_positions, True)
-        
             labels = token_ids.clone()
             labels[~mask] = -100
             token_ids[mask] = self.mask_id
-
+        else:
+            seq_length = self.vq_dim**2 * self.num_channels
+            batch_size = token_ids.shape[0]
+            num_masked = int(cosine_schedule_masking_ratio() * ((self.vq_dim**2 * self.num_channels) - 1)) + 1
+            rand_indices = torch.stack([torch.randperm(seq_length, device=self.device) for _ in range(batch_size)])
+            masked_indices = rand_indices[:, :num_masked]
+            mask = torch.zeros((batch_size, seq_length), dtype=torch.bool, device=self.device)
+            mask.scatter_(1, masked_indices, True)
+            labels = token_ids.clone()
+            labels[~mask] = -100
+            token_ids[mask] = self.mask_id
         return token_ids, labels
         
     def unmask(self, tokens, labels, logits, batch_size, k, temp=1.0):
