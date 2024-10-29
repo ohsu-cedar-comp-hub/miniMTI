@@ -24,11 +24,13 @@ parser.add_argument('--codebook-size', type=int, default=1024, help="number of V
 parser.add_argument('--num-channels', type=int, required=True, help="number of channels per image")
 parser.add_argument('--num-gpus', type=int, required=True, help="number of GPUs to use")
 parser.add_argument('--full-channel-mask', action='store_true', help="downscale images 2x")
+parser.add_argument('--ckpt', type=str, required=False, help="checkpoint_to_resume")
 args = parser.parse_args()
+
 
 def get_ckpt(ckpt_id):
     print('entered get_ckpt stage')
-    dir_ = f"VQ-panel-reduction/{ckpt_id}/checkpoints/"
+    dir_ = f"MVTM-panel-reduction/{ckpt_id}/checkpoints/"
     fname = os.listdir(dir_)[0]
     print('finished get_ckpt stage')
     return f"{dir_}/{fname}"
@@ -59,12 +61,16 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
         full_channel_mask=full_channel_mask
     )
     print('getting model details')
-    model = IF_MVTM(**params)
+    if args.ckpt is not None:
+        ckpt = get_ckpt(args.ckpt)
+        model = IF_MVTM(**params).load_from_checkpoint(ckpt, **params)
+    else:    
+        model = IF_MVTM(**params)
     print('starting wandb')
     wandb_logger = WandbLogger(project="MVTM-panel-reduction", entity='changlab', resume='allow', log_model=False)
     wandb_logger.watch(model, log="all")
     print('start checkpoint callback')
-    checkpoint_callback = ModelCheckpoint(monitor="loss", mode="min")
+    checkpoint_callback = ModelCheckpoint(monitor="loss", mode="min", every_n_train_steps=5000)
     print('checkpoint callback done')
 
     trainer = pl.Trainer(
@@ -81,7 +87,7 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
     if trainer.global_rank == 0:
         wandb_logger.experiment.config.update(params)
     print('starting fitting model')
-    trainer.fit(model, train_loader, val_loader)
+    trainer.fit(model, train_loader)
 
 if __name__ == '__main__':
     train_model(args.config_path, args.ckpt_path, args.vq_dim, args.vq_f_dim, args.remove_he, args.downscale, args.codebook_size, args.num_channels, args.num_gpus, args.deconvolve_he, args.full_channel_mask)

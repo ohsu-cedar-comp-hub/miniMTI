@@ -93,6 +93,7 @@ class IF_MVTM(pl.LightningModule):
         model = load_vqgan(config, ckpt_path=ckpt_path)  # use passed ckpt_path argument
 
         self.tokenizer = model
+        self.num_codes = num_codes
         self.mask_id = num_codes + 3
 
         config = RobertaConfig(
@@ -116,7 +117,7 @@ class IF_MVTM(pl.LightningModule):
         return indices + 3
     
     def detokenize(self, indices, batch_size):
-        indices = torch.clamp(indices - 3, min=0, max=1023)
+        indices = torch.clamp(indices - 3, min=0, max=self.num_codes - 1)
         z = self.tokenizer.quantize.get_codebook_entry(
             indices,
             shape=(batch_size * self.num_channels, self.vq_dim, self.vq_dim, self.vq_f_dim)
@@ -209,7 +210,7 @@ class IF_MVTM(pl.LightningModule):
         
         return out, token_ids, labels
     
-    def predict(self, x, masked_ch_idx=None, T=10, temp=1.0, schedule='cosine'):
+    def predict(self, x, masked_ch_idx=None, T=10, temp=1.0, schedule='cosine', output_attentions=False, output_hidden_states=False):
         batch_size = x.shape[0]
         device = x.device
         with torch.no_grad():
@@ -231,7 +232,7 @@ class IF_MVTM(pl.LightningModule):
             unmask_schedule = get_unmask_schedule(self.vq_dim**2 * len(masked_ch_idx), T, schedule=schedule)
         for k in unmask_schedule:
             if k == 0: continue
-            out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels, output_attentions=True, output_hidden_states=True)
+            out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels, output_attentions=output_attentions, output_hidden_states=output_hidden_states)
             if (labels == -100).all(): break
             input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size, k, temp=temp)
         return out, input_ids, labels
