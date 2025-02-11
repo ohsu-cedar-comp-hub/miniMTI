@@ -11,24 +11,30 @@ from torchmetrics.functional import spearman_corrcoef as spearman
 sys.path.append('../data')
 from data import get_panel_selection_data
 from eval_mae import IF_MAE
+sys.path.append('../training/MVTM')
+#from mvtm import IF_MVTM
 from intensity import get_intensities
-#from process_cedar_biolib_immune import get_channel_info
-from process_aced_immune import get_channel_info
+from aced_stitch2_channel_info import get_channel_info
+#from crc_orion_channel_info import get_channel_info
 from helper import parse_list, str2bool, format_and_print_args, int_or_string, print_vertical_grid, check_gpu_availability, create_intensity_directories, create_metadata_file, create_panel_order_directories
+#from accelerate import PartialState
+#from torch.distributed.elastic.multiprocessing.errors import record
 
 import warnings
 warnings.filterwarnings("ignore")
 
 
 #find most informative marker first (marker that best predicts n - 1 markers)
-def get_channel_order(max_panel_size, val_loader, model, ch2stain, batch_size):
+def get_channel_order(max_panel_size, val_loader, model, ch2stain, batch_size, model_type='mvtm'):
     
     device = model.device
     top_panel = [0]
+    #top_panel = [0,17,18]
     candidate_scores = []
     for num_masked in reversed(range(1, max_panel_size - len(top_panel))):
         masking_ratio = num_masked/max_panel_size
-        model.mae.masking_ratio = masking_ratio
+        if model_type != 'mvtm':
+            model.mae.masking_ratio = masking_ratio
         top_corr = -999
         top_ch = None
         for ch_candidate in range(max_panel_size):
@@ -37,7 +43,7 @@ def get_channel_order(max_panel_size, val_loader, model, ch2stain, batch_size):
             candidate_panel.append(ch_candidate)
             print(f'candidate panel:{[ch2stain[ch] for ch in candidate_panel]}')
 
-            mints, pmints, _ = get_intensities(model, candidate_panel, val_loader, ch2stain, device=device)
+            mints, pmints, _ = get_intensities(model, candidate_panel, val_loader, ch2stain, device=device, model_type=model_type)
             
             if mints.shape[1] == 1:
                 mints = mints.squeeze()
@@ -60,30 +66,32 @@ def get_channel_order(max_panel_size, val_loader, model, ch2stain, batch_size):
 
 
 #find easiest marker first (easiest marker to predict from n - 1 markers)
-def get_channel_order_reversed(max_panel_size, val_loader, model, ch2stain, batch_size):
+def get_channel_order_reversed(max_panel_size, val_loader, model, ch2stain, batch_size, model_type='mvtm'):
     device = model.device
     top_panel = []
-    for num_masked in range(1,max_panel_size):
+    for num_masked in range(1,max_panel_size-1):
         masking_ratio = num_masked/max_panel_size
-        model.mae.masking_ratio = masking_ratio
+        if model_type != 'mvtm':
+            model.mae.masking_ratio = masking_ratio
 
         top_corr = -999
         top_ch = None
         for ch_candidate in range(max_panel_size):
-            if ch_candidate in top_panel: continue
+            if ch_candidate in top_panel or ch_candidate == 0: continue
+            #if ch_candidate in top_panel or ch_candidate in [0,17,18]: continue
             candidate_panel = [i for i in range(max_panel_size) if (i not in top_panel) and (i != ch_candidate)]
-            print(f'candidate panel:{[ch2stain[ch] for ch in candidate_panel]}')
-            print(f'target marker: {ch2stain[ch_candidate]}')
+            #distributed_state.print(f'candidate panel:{[ch2stain[ch] for ch in candidate_panel]}')
+            #distributed_state.print(f'target marker: {ch2stain[ch_candidate]}')
 
-            mints, pmints, _ = get_intensities(model, candidate_panel, val_loader, ch2stain, device=device)
+            mints, pmints, _ = get_intensities(model, candidate_panel, val_loader, ch2stain, device=device, model_type=model_type)
             if mints.shape[1] == 1:
                 mints = mints.squeeze()
                 pmints = pmints.squeeze()
             corr = torch.mean(spearman(pmints, mints))
-            print(f'{corr=}')
+            #distributed_state.print(f'{corr=}')
 
             if corr > top_corr:
-                print('found new top panel')
+                #distributed_state.print('found new top panel')
                 top_corr = corr
                 top_ch = ch_candidate
 
@@ -91,7 +99,10 @@ def get_channel_order_reversed(max_panel_size, val_loader, model, ch2stain, batc
             torch.cuda.empty_cache()
 
         top_panel.append(top_ch)
-    top_panel.extend([i for i in range(len(ch2stain)) if i not in top_panel])
+    top_panel.extend([i for i in range(len(ch2stain)) if i not in top_panel and i != 0])
+    #top_panel.extend([i for i in range(len(ch2stain)) if i not in top_panel and i not in [0,17,18]])
+    top_panel.append(0)
+    #top_panel.extend([0,17,18])
     return list(reversed(top_panel))[:-1], None
 
 def get_channel_order_worst_ch(max_panel_size, val_loader, model, ch2stain, batch_size):
@@ -119,7 +130,7 @@ def get_channel_order_worst_ch(max_panel_size, val_loader, model, ch2stain, batc
         
     return top_panel.astype('int').tolist(), None
 
-def get_channel_order_forward_reverse(max_panel_size, val_loader, model, ch2stain, batch_size):
+def get_channel_order_forward_reverse(max_panel_size, val_loader, model, ch2stain, batch_size, distributed_state, model_type='mvtm'):
     device = model.device
     top_panel = np.ones(max_panel_size) * -999
     top_panel[0] = 0
@@ -140,8 +151,9 @@ def get_channel_order_forward_reverse(max_panel_size, val_loader, model, ch2stai
             
             num_masked = max_panel_size - len(candidate_panel)
             masking_ratio = num_masked/max_panel_size
-            model.mae.masking_ratio = masking_ratio
-            mints, pmints, _ = get_intensities(model, candidate_panel, val_loader, ch2stain, device=device)
+            if model_type != 'mvtm':
+                model.mae.masking_ratio = masking_ratio
+            mints, pmints, _ = get_intensities(model, candidate_panel, val_loader, ch2stain, device=device, model_type=model_type)
             if mints.shape[1] == 1:
                 mints = mints.squeeze()
                 pmints = pmints.squeeze()
@@ -170,9 +182,12 @@ def get_channel_order_forward_reverse(max_panel_size, val_loader, model, ch2stai
     return top_panel[:-1].astype('int').tolist(), None
     
 
-def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id, batch_size, reverse, forward_reverse, param_file): 
+#@record
+def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id, batch_size, reverse, forward_reverse, param_file, model_type='mvtm', downscale=False, remove_he=False, deconvolve_he=False): 
     
     device = check_gpu_availability(gpu_id)
+    #distributed_state = PartialState()
+    #device = distributed_state.device
 
     print("---------------------------------- Collecting Channel Info --------------------------------")
     keep_channels, keep_channels_idx, ch2idx = get_channel_info()
@@ -186,7 +201,8 @@ def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id,
         # We also need cell location information, that is embedded in the image file, we need to get that information
         # and append it to the feature intensity table. 
         print("-- Loading testing dataset", dataset, "......")
-        val_loader = get_panel_selection_data(dataset, batch_size, dataset_size, remove_background) 
+        rescale = model_type == 'mvtm'
+        val_loader = get_panel_selection_data(dataset, batch_size, dataset_size, remove_background, rescale=rescale, remove_he=False, deconvolve_he=False, downscale=downscale) 
         print("-- Testing dataset loaded successfully! ")
     except Exception as e:
         print("An error occurred while loading the testing dataset:", e)
@@ -206,7 +222,10 @@ def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id,
         else:
             params = {'channels':max_panel_size}
             
-        model = IF_MAE(**params).load_from_checkpoint(os.path.join(ckpt, model_name), **params).to(device).eval()
+        if model_type == 'mvtm':
+            model = IF_MVTM(**params).load_from_checkpoint(os.path.join(ckpt, model_name), **params).to(device).eval()
+        else:
+            model = IF_MAE(**params).load_from_checkpoint(os.path.join(ckpt, model_name), **params).to(device).eval()
         print("-- Model loaded successfully! ")
     except Exception as e:
         print("-- An error occurred while loading the model:", e)
@@ -216,11 +235,11 @@ def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id,
     print("---------------------------------- Getting Panel Order --------------------------------")
     # Decide which function to call based on reverse_channel_order
     if reverse:
-        top_panel, candidate_scores = get_channel_order_reversed(max_panel_size, val_loader, model, ch2stain, batch_size)
+        top_panel, candidate_scores = get_channel_order_reversed(max_panel_size, val_loader, model, ch2stain, batch_size, model_type=model_type)
     elif forward_reverse:
-        top_panel, candidate_scores = get_channel_order_forward_reverse(max_panel_size, val_loader, model, ch2stain, batch_size)
+        top_panel, candidate_scores = get_channel_order_forward_reverse(max_panel_size, val_loader, model, ch2stain, batch_size, model_type=model_type)
     else:
-        top_panel, candidate_scores = get_channel_order(max_panel_size, val_loader, model, ch2stain, batch_size)
+        top_panel, candidate_scores = get_channel_order(max_panel_size, val_loader, model, ch2stain, batch_size, model_type=model_type)
 
     #with open('candidate_panel_scores.pickle', 'wb') as f:
     #    pickle.dump(candidate_scores, f)
@@ -243,22 +262,29 @@ def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id,
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run inference with panel reduction model')
-    parser.add_argument("--val_dataset", type=str, nargs='*', required=True, help="Which dataset to use for panel selection")
-    parser.add_argument("--val_dataset_size", type=int_or_string, default="all", help="The number of samples to be used for inferencing")
-    parser.add_argument("--remove_background", action='store_true', default=True, help="Whether to remove background information")
+    parser.add_argument("--val-dataset", type=str, nargs='*', required=True, help="Which dataset to use for panel selection")
+    parser.add_argument("--val-dataset-size", type=int_or_string, default="all", help="The number of samples to be used for inferencing")
+    parser.add_argument("--remove-background", action='store_true', default=False, help="Whether to remove background information")
     parser.add_argument("--ckpt", type=str, required=True, help="file path to the checkpoint")
-    parser.add_argument("--max_panel_size", type=int, default=17, help="Maximum Number of Markers in Panel")
-    parser.add_argument('--gpu_id', type=int, default=None, help='GPU ID to use (if available)')
-    parser.add_argument("--batch_size", type=int, default=20000, help="Batch size for processing")
+    parser.add_argument("--max-panel-size", type=int, default=17, help="Maximum Number of Markers in Panel")
+    parser.add_argument('--gpu-id', type=int, default=None, help='GPU ID to use (if available)')
+    parser.add_argument("--batch-size", type=int, default=20000, help="Batch size for processing")
     parser.add_argument('--reversed', action='store_true',
                         help='If True, use get_channel_order_reversed(), otherwise use get_channel_order()')   
     parser.add_argument('--forward-reverse', action='store_true',
                         help='If True, use combo of get_channel_order and get_channel_order_reversed()')   
-    parser.add_argument("--param_file", type=str, default=None, help="json file containing model hyperparameters")
+    parser.add_argument("--param-file", type=str, default=None, help="json file containing model hyperparameters")
+    parser.add_argument("--mae", action='store_true', help="if using og mae")
+    parser.add_argument("--downscale", action='store_true', help="if using og mae")
+    parser.add_argument("--remove-he", action='store_true', help="if using og mae")
+    parser.add_argument("--deconvolve-he", action='store_true', help="if using og mae")
     
     args = parser.parse_args()
     format_and_print_args(args, parser) # Print the formatted arguments
+    model_type='mvtm'
+    if args.mae:
+        model_type='MAE'
     
-    main(dataset=args.val_dataset, dataset_size=args.val_dataset_size, remove_background=args.remove_background, ckpt=args.ckpt, max_panel_size=args.max_panel_size, gpu_id=args.gpu_id, batch_size=args.batch_size, reverse=args.reversed, forward_reverse=args.forward_reverse, param_file=args.param_file)
+    main(dataset=args.val_dataset, dataset_size=args.val_dataset_size, remove_background=args.remove_background, ckpt=args.ckpt, max_panel_size=args.max_panel_size, gpu_id=args.gpu_id, batch_size=args.batch_size, reverse=args.reversed, forward_reverse=args.forward_reverse, param_file=args.param_file, model_type=model_type, downscale=args.downscale, remove_he=remove_he, deconvolve_he=deconvolve_he)
 
     print("########## Run Panel Order Complete ##########")
