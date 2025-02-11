@@ -71,12 +71,14 @@ class IF_MVTM(pl.LightningModule):
         num_layers,
         num_heads,
         latent_dim,
-        num_codes,
-        config_path,   # added config_path argument
-        ckpt_path,     # added ckpt_path argument
-        vq_dim,        # added vq_dim argument
+        num_codes,  
+        config_path_if,    
+        ckpt_path_if,     
+        vq_dim,        
         vq_f_dim,
-        full_channel_mask=False# added vq_f_dim argument
+        config_path_he=None,
+        ckpt_path_he=None,
+        full_channel_mask=False
     ):
         super().__init__() 
         
@@ -84,22 +86,49 @@ class IF_MVTM(pl.LightningModule):
         self.weight_decay = weight_decay
         self.num_channels = num_channels
         self.full_channel_mask = full_channel_mask
+        self.vq_dim = vq_dim         
+        self.vq_f_dim = vq_f_dim 
+        
+        #if no H&E VQGAN checkpoint is provided, then IF only
+        self.if_only = True
+        if ckpt_path_he is not None:
+            self.if_only = False
+        
+        #When we quantize H&E, it is input as input as one channel,
+        #but is quantized to just one token sequence (as opposed to 3),
+        #so if H&E is included, we have to differentiate between the
+        #number of input channels, and the number of input markers
+        #(H&E is 3 channels, but really only one marker)
+        if self.if_only:
+            self.num_markers = self.num_channels
+            self.num_if_channels = self.num_channels
+        else:
+            self.num_markers = self.num_channels - 3 + 1
+            self.num_if_channels = self.num_channels - 3   
 
-        self.vq_dim = vq_dim         # use passed vq_dim argument
-        self.vq_f_dim = vq_f_dim     # use passed vq_f_dim argument
-
-        # Load VQGAN model
-        config = load_config(config_path)   # use passed config_path argument
-        model = load_vqgan(config, ckpt_path=ckpt_path)  # use passed ckpt_path argument
-
-        self.tokenizer = model
-        self.num_codes = num_codes
-        self.mask_id = num_codes + 3
+        # Load VQGAN model(s)
+        config_if = load_config(config_path_if)
+        self.tokenizer = load_vqgan(config_if, ckpt_path=ckpt_path_if)
+        self.num_if_codes = num_codes 
+        
+        #load seperate VQGAN for H&E images
+        if not self.if_only:
+            config_he = load_config(config_path_he)
+            self.tokenizer_he = load_vqgan(config_he, ckpt_path=ckpt_path_he)
+            #assuming for now that H&E and IF have the same codebook sizes,
+            #we want to append the H&E token vocab to the IF token vocab
+            self.num_codes = num_codes * 2 
+                                
+        else:
+            self.num_codes = num_codes
+        #add the MASK token as the last token ID
+        #(BERT reserves tokens 0,1, and 2 for special tokens)
+        self.mask_id = num_codes + 3 
 
         config = RobertaConfig(
-            vocab_size=num_codes + 4,
-            type_vocab_size=num_channels,
-            max_position_embeddings=self.vq_dim ** 2,
+            vocab_size=self.num_codes + 4,
+            type_vocab_size=self.num_markers,
+            max_position_embeddings=(self.vq_dim ** 2) + 1,
             hidden_size=latent_dim,
             num_hidden_layers=num_layers,
             num_attention_heads=num_heads,
@@ -107,34 +136,80 @@ class IF_MVTM(pl.LightningModule):
         )
         print(f'vq_dim: {self.vq_dim}')
         print(f'vq_f_dim: {self.vq_f_dim}')
-        print(f'config_path: {config_path}')
-        print(f'ckpt_path: {ckpt_path}')
+        print(f'IF config_path: {config_path_if}')
+        print(f'IF ckpt_path: {ckpt_path_if}')
         
         self.mvtm = RobertaForMaskedLM(config)
 
-    def tokenize(self, x):
-        z, _, [_, _, indices] = self.tokenizer.encode(x)
-        return indices + 3
+        
+    def _tokenize(self, x, tokenizer):
+        '''returns codebook indices from provided VQGAN model'''
+        _, _, [_, _, indices] = tokenizer.encode(x)
+        return indices
+    
+    
+    def tokenize(self, x, batch_size):
+        if self.if_only: 
+            x = rearrange(x, 'b c h w -> (b c) 1 h w')
+            tokens = self._tokenize(x, self.tokenizer)
+            tokens = tokens.reshape(batch_size, self.num_if_channels * (self.vq_dim**2))
+            
+        else:
+            x_if = x[:,:-3,:,:] #splice first N-3 channels
+            x_if = rearrange(x_if, 'b c h w -> (b c) 1 h w') #rearrange to tensor of single channel images
+            tokens_if = self._tokenize(x_if, self.tokenizer) #tokenize
+            tokens_if = tokens_if.reshape(batch_size, self.num_if_channels * (self.vq_dim**2)) # reshape to one sequence per im
+            
+            x_he = x[:,-3:,:,:] #splice last 3 channels
+            tokens_he = self._tokenize(x_he, self.tokenizer_he) #tokenize
+            tokens_he = tokens_he.reshape(batch_size, self.vq_dim**2) # reshape to one sequence per im
+            tokens_he += self.num_if_codes #append H&E vocab to IF vocab
+          
+            tokens = torch.cat([tokens_if, tokens_he], axis=1) #concatenate IF and H&E token sequences
+            
+        tokens += 3 #(BERT reserves tokens 0,1, and 2 for special tokens)
+        
+        return tokens
+    
+    
+    def _detokenize(self, indices, num_channels, batch_size, tokenizer):
+        indices = torch.clamp(indices - 3, min=0, max=self.num_if_codes - 1)
+        z = tokenizer.quantize.get_codebook_entry(
+            indices,
+            shape=(batch_size * num_channels, self.vq_dim, self.vq_dim, self.vq_f_dim)
+        )
+        z = z.reshape([batch_size * num_channels, self.vq_f_dim, self.vq_dim, self.vq_dim])
+        return tokenizer.decode(z)
     
     def detokenize(self, indices, batch_size):
-        indices = torch.clamp(indices - 3, min=0, max=self.num_codes - 1)
-        z = self.tokenizer.quantize.get_codebook_entry(
-            indices,
-            shape=(batch_size * self.num_channels, self.vq_dim, self.vq_dim, self.vq_f_dim)
-        )
-        z = z.reshape([batch_size * self.num_channels, self.vq_f_dim, self.vq_dim, self.vq_dim])
-        return self.tokenizer.decode(z)
+        indices = indices[:,1:],copy()
+        if self.if_only:
+            decoded = self._detokenize(indices, self.num_if_channels, batch_size, self.tokenizer)
+            decoded = rearrange(decoded, '(b c) 1 h w -> b c h w', c=self.num_if_channels)
+        else:
+            indices_if = indices[:,:-self.vq_dim**2]
+            decoded_if = self._detokenize(indices_if, self.num_if_channels, batch_size, self.tokenizer)
+            decoded_if = rearrange(decoded_if, '(b c) 1 h w -> b c h w', c=self.num_if_channels)
+
+            indices_he = indices[:,-self.vq_dim**2:]
+            indices_he -= self.num_if_codes
+            decoded_he = self._detokenize(indices_he, 1, batch_size, self.tokenizer_he) #H&E is 1 "channel" or code sequence
+            
+            decoded = torch.cat([decoded_if, decoded_he], axis=1)
         
-    def mask_channels(self, token_ids, masked_ch_idx=None):
+        return decoded
+        
+    def mask_channels(self, token_ids, masked_ch_idx=list(range(17))):
         if masked_ch_idx is not None:
+            labels = token_ids.clone()
             for channel_i in masked_ch_idx:
                 token_ids[:, self.vq_dim**2 * channel_i:self.vq_dim**2 * (channel_i + 1)] = self.mask_id
-            labels = token_ids.clone()
             labels[token_ids != self.mask_id] = -100
         elif self.full_channel_mask:
-            seq_length = (self.vq_dim**2) * self.num_channels
-            num_masked = int(cosine_schedule_masking_ratio() * (self.num_channels - 1)) + 1
-            rand_indices = torch.rand(token_ids.shape[0], self.num_channels, device=self.device).argsort(dim=-1)
+            seq_length = (self.vq_dim**2) * self.num_markers
+            num_masked = int(cosine_schedule_masking_ratio() * (self.num_markers - 1)) + 1
+            assert num_masked > 0 and num_masked < self.num_markers
+            rand_indices = torch.rand(token_ids.shape[0], self.num_markers, device=self.device).argsort(dim=-1)
             masked_indices = rand_indices[:, :num_masked]
             mask = torch.zeros((token_ids.shape[0], seq_length), dtype=torch.bool, device=self.device)
             start_positions = masked_indices * self.vq_dim**2
@@ -146,9 +221,9 @@ class IF_MVTM(pl.LightningModule):
             labels[~mask] = -100
             token_ids[mask] = self.mask_id
         else:
-            seq_length = self.vq_dim**2 * self.num_channels
+            seq_length = self.vq_dim**2 * self.num_markers
             batch_size = token_ids.shape[0]
-            num_masked = int(cosine_schedule_masking_ratio() * ((self.vq_dim**2 * self.num_channels) - 1)) + 1
+            num_masked = int(cosine_schedule_masking_ratio() * (seq_length - 1)) + 1
             rand_indices = torch.stack([torch.randperm(seq_length, device=self.device) for _ in range(batch_size)])
             masked_indices = rand_indices[:, :num_masked]
             mask = torch.zeros((batch_size, seq_length), dtype=torch.bool, device=self.device)
@@ -197,14 +272,23 @@ class IF_MVTM(pl.LightningModule):
         batch_size = x.shape[0]
         device = x.device
         with torch.no_grad():
-            x = rearrange(x, 'b c h w -> (b c) 1 h w')
-            token_ids = self.tokenize(x)
-            token_ids = token_ids.reshape(batch_size, self.num_channels * (self.vq_dim**2))
+            token_ids = self.tokenize(x, batch_size)
         
-        input_ids, labels = self.mask_channels(token_ids.clone(), masked_ch_idx=masked_ch_idx)
-
-        type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device) * i for i in range(self.num_channels)]).long()
-        position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_channels)]).long()
+        #input_ids, labels = self.mask_channels(token_ids.clone(), masked_ch_idx=masked_ch_idx)
+        input_ids, labels = self.mask_channels(token_ids.clone())
+        print(input_ids.shape, labels.shape)
+        
+        #add cls tokens
+        cls_tokens = torch.zeros(input_ids.shape[0], 1, device=input_ids.device).long()
+        input_ids = torch.cat([cls_tokens, input_ids], axis=1)
+        labels = torch.cat([cls_tokens, labels], axis=1)
+        
+        type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device) * i for i in range(self.num_markers)]).long()
+        position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) + 1 for _ in range(self.num_markers)]).long()
+        
+        #account for CLS token
+        type_ids = torch.cat([torch.zeros(1, device=device), type_ids]).long()
+        position_ids = torch.cat([torch.zeros(1, device=device), position_ids]).long()
 
         out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels, output_attentions=True)
         
@@ -214,17 +298,24 @@ class IF_MVTM(pl.LightningModule):
         batch_size = x.shape[0]
         device = x.device
         with torch.no_grad():
-            x = rearrange(x, 'b c h w -> (b c) 1 h w')
-            token_ids = self.tokenize(x)
-            token_ids = token_ids.reshape(batch_size,self.num_channels * (self.vq_dim**2))
+            token_ids = self.tokenize(x, batch_size)
         
         if masked_ch_idx is None:
             input_ids = token_ids.clone()
             labels = torch.ones(input_ids.shape, device=device) * -100
         input_ids, labels = self.mask_channels(token_ids.clone(), masked_ch_idx=masked_ch_idx)
         
-        type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device)*i for i in range(self.num_channels)]).long()
-        position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_channels)]).long()
+        #add cls tokens
+        cls_tokens = torch.zeros(input_ids.shape[0], 1, device=input_ids.device).long()
+        input_ids = torch.cat([cls_tokens, input_ids], axis=1)
+        labels = torch.cat([cls_tokens, labels], axis=1)
+        
+        type_ids = torch.cat([torch.ones(self.vq_dim**2, device=device)*i for i in range(self.num_markers)]).long()
+        position_ids = torch.cat([torch.arange(self.vq_dim**2, device=device) for _ in range(self.num_markers)]).long()
+        
+        #account for CLS token
+        type_ids = torch.cat([torch.zeros(1, device=device), type_ids]).long()
+        position_ids = torch.cat([torch.zeros(1, device=device), position_ids]).long()
         
         if masked_ch_idx is None:
             unmask_schedule = [1]
@@ -233,6 +324,7 @@ class IF_MVTM(pl.LightningModule):
         for k in unmask_schedule:
             if k == 0: continue
             out = self.mvtm(input_ids=input_ids, token_type_ids=type_ids, position_ids=position_ids, labels=labels, output_attentions=output_attentions, output_hidden_states=output_hidden_states)
+            print(out['loss'])
             if (labels == -100).all(): break
             input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size, k, temp=temp)
         return out, input_ids, labels
