@@ -22,11 +22,14 @@ details for the input parameters are below:
   - `batch-name`: This should be a string used as an identifier for which files are included in the validation set. It will be used to name the train and validation file like so: `"train-<batch-name>-out.h5"` `"val-<batch-name>.h5"` 
   
 ## Training
-- `python run_training.py` will handle model training
+- `training/MVTM/run_training-mvtm.py` will handle model training for the VQ+LM model, and `training/run_training.py` will handle the vanilla MAE model.
 
 ## Model Evaluation
-- First do iterative panel selection to determine marker order:
-  - `python run_panel_selection.py --ckpt <\path\to\model\checkpoint> --val_dataset </path/to/training/dataset> --val_dataset_size <NUM_CELLS> --max_panel_size <MAX_NUM_MARKERS> --gpu_id <GPU_ID> --batch_size <BATCH_SIZE> --params_file </path/to/params/file>`
-- Then generate plots for model + marker order: `python model_panel_evaluation.py`. You can also generate embedding plots: `python embedding_eval.py`
+- Prior to panel selection, a representative dataset that contains a balanced set of cells with different marker expressions must be produced from the original training set.
+- Next, iterative panel selection can be done to determine the best marker order:
+  - `python run_panel_selection.py --ckpt </path/to/model/checkpoint> --val_dataset </path/to/panel/selection/dataset> --val_dataset_size <NUM_CELLS> --max_panel_size <MAX_NUM_MARKERS> --gpu_id <GPU_ID> --batch_size <BATCH_SIZE> --params_file </path/to/params/file>`
+ 
+- Then the script `eval/generate_ftable_from_h5.py` can be used to generate a dataframe containing real and predicted mean intensities for the chosen imputed marker set, along with the X,Y coordinates for each cell (TODO: setup CLI)
+- Then you can use the functions in `eval/plotting` generate plots. You can also generate embedding plots: `eval/embedding_eval.py`
   - currenly no CLI setup for these two scripts, so you must change the variables in the script  
   
