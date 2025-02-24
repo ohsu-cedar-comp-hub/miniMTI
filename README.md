@@ -34,3 +34,5 @@ details for the input parameters are below:
 - Then you can use the functions in `eval/plotting` generate plots. You can also generate embedding plots: `eval/embedding_eval.py`
   - currenly no CLI setup for these two scripts, so you must change the variables in the script  
   
+## Acknowledgements
+This work was supported by grants from the National Institutes of Health (NIH), the Chan Zuckerberg Initiative (CZI), and the Stanford Data Science Initiative. We thank the members of the Chang Lab for their feedback and assistance throughout the development of this project.
