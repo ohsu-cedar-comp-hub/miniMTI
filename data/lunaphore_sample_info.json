@@ -173,5 +173,35 @@
         "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day9/20250108_142559_4_fuoZai_ACED_Final_1010340/20250108_142559_4_fuoZai_ACED_Final_1010340.tiff",
         "HE":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_HE/Day9/",
         "cell-mask":"/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day9/20250108_142559_4_fuoZai_ACED_Final_1010340/20250108_142559_4_fuoZai_ACED_Final_1010340_mesmer_cell_mask.tif"
-    }
+    },
+    "1010344":{
+        "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day10/20250110_122215_1_bKl7Da_ACED_Final_1010344/20250110_122215_1_bKl7Da_ACED_Final_1010344.tiff",
+        "HE":"",
+        "cell-mask":"/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day10/20250110_122215_1_bKl7Da_ACED_Final_1010344/20250110_122215_1_bKl7Da_ACED_Final_1010344_mesmer_cell_mask.tif"
+    },
+    "1010354":{
+        "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day10/20250110_122215_3_ADrlZD_ACED_Final_1010354/20250110_122215_3_ADrlZD_ACED_Final_1010354.tiff",
+        "HE":"",
+        "cell-mask":"/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day10/20250110_122215_3_ADrlZD_ACED_Final_1010354/20250110_122215_3_ADrlZD_ACED_Final_1010354_mesmer_cell_mask.tif"
+    },
+    "1010349":{
+        "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day11/20250114_142511_1_CH4SBF_ACED_Final_1010349/20250114_142511_1_CH4SBF_ACED_Final_1010349.tiff",
+        "HE":"",
+        "cell-mask":"/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day11/20250114_142511_1_CH4SBF_ACED_Final_1010349/20250114_142511_1_CH4SBF_ACED_Final_1010349_mesmer_cell_mask.tif"
+    },
+    "1010363":{
+        "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day11/20250114_142512_2_ialfd7_ACED_Final_1010363/20250114_142512_2_ialfd7_ACED_Final_1010363.tiff",
+        "HE":"",
+        "cell-mask":"/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day11/20250114_142512_2_ialfd7_ACED_Final_1010363/20250114_142512_2_ialfd7_ACED_Final_1010363_mesmer_cell_mask.tif"
+    },
+    "1020179":{
+        "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day11/20250114_142512_3_FsTt50_ACED_Final_1020179/20250114_142512_3_FsTt50_ACED_Final_1020179.tiff",
+        "HE":"",
+        "cell-mask":"/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day11/20250114_142512_3_FsTt50_ACED_Final_1020179/20250114_142512_3_FsTt50_ACED_Final_1020179_mesmer_cell_mask.tif"
+    },
+    "10201830":{
+        "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day11/20250114_142512_4_lAA6Xs_ACED_Final_10201830/20250114_142512_4_lAA6Xs_ACED_Final_10201830.tiff",
+        "HE":"",
+        "cell-mask":"/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day11/20250114_142512_4_lAA6Xs_ACED_Final_10201830/20250114_142512_4_lAA6Xs_ACED_Final_10201830_mesmer_cell_mask.tif"
+    },
 }
