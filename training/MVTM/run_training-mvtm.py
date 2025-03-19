@@ -1,5 +1,6 @@
 import os
 import sys
+#import wandb
 import argparse
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
@@ -11,8 +12,10 @@ pl.seed_everything(69, workers=True)
 
 # Argument parsing for command line input
 parser = argparse.ArgumentParser(description='Run training with MVTM')
-parser.add_argument('--config-path', type=str, required=True, help='Path to VQGAN config file')
-parser.add_argument('--ckpt-path', type=str, required=True, help='Path to the VQGAN checkpoint file')
+parser.add_argument('--config-path-if', type=str, required=True, help='Path to VQGAN config file (IF)')
+parser.add_argument('--ckpt-path-if', type=str, required=True, help='Path to the VQGAN checkpoint file (IF)')
+parser.add_argument('--config-path-he', type=str, required=False, help='Path to VQGAN config file (H&E)')
+parser.add_argument('--ckpt-path-he', type=str, required=False, help='Path to the VQGAN checkpoint file (H&E)')
 parser.add_argument('--vq-dim', type=int, default=4, help='Dimension of VQ latent space (default: 4)')
 parser.add_argument('--vq-f-dim', type=int, default=256, help='Feature dimension for VQGAN (default: 256)')
 parser.add_argument('--train-file', type=str, default='/mnt/scratch/ORION-CRC-Unnormalized/train-CRC05-06-out.h5', help='Path to the training dataset file')
@@ -35,10 +38,10 @@ def get_ckpt(ckpt_id):
     print('finished get_ckpt stage')
     return f"{dir_}/{fname}"
 
-def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, codebook_size, num_channels, num_gpus, deconvolve_he, full_channel_mask):
+def train_model(config_path_if, ckpt_path_if, config_path_he, ckpt_path_he, vq_dim, vq_f_dim, remove_he, downscale, codebook_size, num_channels, num_gpus, deconvolve_he, full_channel_mask):
     print('entered train model')
-    NUM_EPOCHS = 100
-    BATCH_SIZE = 128
+    NUM_EPOCHS = 20
+    BATCH_SIZE = 32
     NUM_VAL_SAMPLES = 10_000
     train_file=args.train_file
     val_file=args.val_file
@@ -47,15 +50,17 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
     print('after train loader')
 
     params = dict(
-        lr=1e-5,
+        lr=3e-6,
         weight_decay=0,
         num_channels=num_channels,
         num_layers=12,
         num_heads=12,
         latent_dim=768,
         num_codes=codebook_size,
-        config_path=config_path,
-        ckpt_path=ckpt_path,
+        config_path_he=config_path_he,
+        ckpt_path_he=ckpt_path_he,
+        config_path_if=config_path_if,
+        ckpt_path_if=ckpt_path_if,
         vq_dim=vq_dim,
         vq_f_dim=vq_f_dim,
         full_channel_mask=full_channel_mask
@@ -70,7 +75,7 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
     wandb_logger = WandbLogger(project="MVTM-panel-reduction", entity='changlab', resume='allow', log_model=False)
     wandb_logger.watch(model, log="all")
     print('start checkpoint callback')
-    checkpoint_callback = ModelCheckpoint(monitor="loss", mode="min", every_n_train_steps=5000)
+    checkpoint_callback = ModelCheckpoint(monitor="loss", mode="min", every_n_train_steps=1000)
     print('checkpoint callback done')
 
     trainer = pl.Trainer(
@@ -81,6 +86,8 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
         max_epochs=NUM_EPOCHS,
         num_sanity_val_steps=1,
         strategy='ddp',
+        #gradient_clip_val=1.0,
+        #gradient_clip_algorithm="norm",
         default_root_dir="/home/groups/ChangLab/simsz/cycif-panel-reduction/training/MVTM"
     )
     print('trainer done')
@@ -90,4 +97,5 @@ def train_model(config_path, ckpt_path, vq_dim, vq_f_dim, remove_he, downscale, 
     trainer.fit(model, train_loader)
 
 if __name__ == '__main__':
-    train_model(args.config_path, args.ckpt_path, args.vq_dim, args.vq_f_dim, args.remove_he, args.downscale, args.codebook_size, args.num_channels, args.num_gpus, args.deconvolve_he, args.full_channel_mask)
+    #wandb.init(settings=wandb.Settings(start_method="fork"))
+    train_model(args.config_path_if, args.ckpt_path_if, args.config_path_he, args.ckpt_path_he, args.vq_dim, args.vq_f_dim, args.remove_he, args.downscale, args.codebook_size, args.num_channels, args.num_gpus, args.deconvolve_he, args.full_channel_mask)
