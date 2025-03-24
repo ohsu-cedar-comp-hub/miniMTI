@@ -98,12 +98,15 @@ def create_panel_selection_data(fpath1, fpath2, savename, n_clusters=15, n_close
 
 
 if __name__ == '__main__':
-    #savename = 'lunaphore_panel_select_data'
+    savename = 'lunaphore_panel_select_data'
     #fpath1 = '/home/groups/ChangLab/dataset/lunaphore-immune-unnorm/lunaphore_dataset_norm_sid=1010332.h5'
     #fpath2 = '/home/groups/ChangLab/dataset/lunaphore-immune-unnorm/lunaphore_dataset_norm_sid=1010173.h5'
+    fpath1 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010240.h5'
+    fpath2 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010296.h5'
+    fpath3 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010323.h5'
     
-    savename = 'orion_panel_select_data'
-    fpath1 = '/mnt/scratch/ORION-CRC-Unnormalized-fixed-HE/orion_crc_dataset_sid=CRC02.h5'
-    fpath2 = '/mnt/scratch/ORION-CRC-Unnormalized-fixed-HE/orion_crc_dataset_sid=CRC03.h5'
+    #savename = 'orion_panel_select_data'
+    #fpath1 = '/mnt/scratch/ORION-CRC-Unnormalized-fixed-HE/orion_crc_dataset_sid=CRC02.h5'
+    #fpath2 = '/mnt/scratch/ORION-CRC-Unnormalized-fixed-HE/orion_crc_dataset_sid=CRC03.h5'
     
     create_panel_selection_data(fpath1, fpath2, savename)
