@@ -247,17 +247,17 @@
     "1010061":{
         "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day14/20250129_131106_1_uZCTy8_ACED_Final_1010061/20250129_131106_1_uZCTy8_ACED_Final_1010061.tiff",
         "HE":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_HE/Day14/2025_02_12__1010061.czi",
-        "cell-mask":""
+        "cell-mask":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day14/20250129_131106_1_uZCTy8_ACED_Final_1010061/20250129_131106_1_uZCTy8_ACED_Final_1010061.tiff"
     },
     "1010092":{
         "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day14/20250129_131106_2_wAauss_ACED_Final_1010092/20250129_131106_2_wAauss_ACED_Final_1010092.tiff",
         "HE":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_HE/Day14/2025_02_12__1010092.czi",
-        "cell-mask":""
+        "cell-mask":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day14/20250129_131106_2_wAauss_ACED_Final_1010092/20250129_131106_2_wAauss_ACED_Final_1010092.tiff"
     },
     "1010132":{
         "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day14/20250129_131107_3_TSI7Kl_ACED_Final_1010132/20250129_131107_3_TSI7Kl_ACED_Final_1010132.tiff",
         "HE":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_HE/Day14/2025_02_12__1010132.czi",
-        "cell-mask":""
+        "cell-mask":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day14/20250129_131107_3_TSI7Kl_ACED_Final_1010132/20250129_131107_3_TSI7Kl_ACED_Final_1010132.tiff"
     },
     "1010133":{
         "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day15/20250203_150224_1_pLN4Bu_ACED_Final_1010133/20250203_150224_1_pLN4Bu_ACED_Final_1010133.tiff",
