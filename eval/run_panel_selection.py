@@ -10,12 +10,13 @@ import numpy as np
 from torchmetrics.functional import spearman_corrcoef as spearman
 sys.path.append('../data')
 from data import get_panel_selection_data
-from eval_mae import IF_MAE
+#from eval_mae import IF_MAE
 sys.path.append('../training/MVTM')
-#from mvtm import IF_MVTM
+from mvtm import IF_MVTM
 from intensity import get_intensities
-from aced_stitch2_channel_info import get_channel_info
-#from crc_orion_channel_info import get_channel_info
+#from aced_stitch2_channel_info import get_channel_info
+from crc_orion_channel_info import get_channel_info
+#from lunaphore_channel_info import get_channel_info
 from helper import parse_list, str2bool, format_and_print_args, int_or_string, print_vertical_grid, check_gpu_availability, create_intensity_directories, create_metadata_file, create_panel_order_directories
 #from accelerate import PartialState
 #from torch.distributed.elastic.multiprocessing.errors import record
@@ -28,7 +29,7 @@ warnings.filterwarnings("ignore")
 def get_channel_order(max_panel_size, val_loader, model, ch2stain, batch_size, model_type='mvtm'):
     
     device = model.device
-    top_panel = [0]
+    top_panel = [0,17]
     #top_panel = [0,17,18]
     candidate_scores = []
     for num_masked in reversed(range(1, max_panel_size - len(top_panel))):
@@ -221,7 +222,7 @@ def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id,
                 params = json.load(f)
         else:
             params = {'channels':max_panel_size}
-            
+        params['cls_token'] = False
         if model_type == 'mvtm':
             model = IF_MVTM(**params).load_from_checkpoint(os.path.join(ckpt, model_name), **params).to(device).eval()
         else:
@@ -268,7 +269,7 @@ if __name__ == "__main__":
     parser.add_argument("--ckpt", type=str, required=True, help="file path to the checkpoint")
     parser.add_argument("--max-panel-size", type=int, default=17, help="Maximum Number of Markers in Panel")
     parser.add_argument('--gpu-id', type=int, default=None, help='GPU ID to use (if available)')
-    parser.add_argument("--batch-size", type=int, default=20000, help="Batch size for processing")
+    parser.add_argument("--batch-size", type=int, default=64, help="Batch size for processing")
     parser.add_argument('--reversed', action='store_true',
                         help='If True, use get_channel_order_reversed(), otherwise use get_channel_order()')   
     parser.add_argument('--forward-reverse', action='store_true',
@@ -285,6 +286,6 @@ if __name__ == "__main__":
     if args.mae:
         model_type='MAE'
     
-    main(dataset=args.val_dataset, dataset_size=args.val_dataset_size, remove_background=args.remove_background, ckpt=args.ckpt, max_panel_size=args.max_panel_size, gpu_id=args.gpu_id, batch_size=args.batch_size, reverse=args.reversed, forward_reverse=args.forward_reverse, param_file=args.param_file, model_type=model_type, downscale=args.downscale, remove_he=remove_he, deconvolve_he=deconvolve_he)
+    main(dataset=args.val_dataset, dataset_size=args.val_dataset_size, remove_background=args.remove_background, ckpt=args.ckpt, max_panel_size=args.max_panel_size, gpu_id=args.gpu_id, batch_size=args.batch_size, reverse=args.reversed, forward_reverse=args.forward_reverse, param_file=args.param_file, model_type=model_type, downscale=args.downscale, remove_he=args.remove_he, deconvolve_he=args.deconvolve_he)
 
     print("########## Run Panel Order Complete ##########")
