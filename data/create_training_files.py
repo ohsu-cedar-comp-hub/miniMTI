@@ -38,6 +38,7 @@ if __name__ == '__main__':
         
     train_files, val_files = [],[]
     for h5file in os.listdir(args.data_dir):
+        if not h5file.endswith('h5'): continue
         if all([s not in h5file for s in val_samples]) and 'train' not in h5file:
             train_files.append(h5py.File(f"{args.data_dir}/{h5file}", "r"))
         else:

@@ -8,7 +8,7 @@ from process_cedar_biolib_immune import norm_if, extract_cells
 
 def get_channel_info():
     """returns lists of channel names and indices that are going to be kept, as well as a dictionary mapping maker names to indices"""
-    '''
+    
     channels = ['DAPI1', 'c2', 'CD8', 'CD4', 'FOXP3', 
                 'DAPI2', 'EPCAM', 'AR', 'CD11b', 'CD68', 
                 'DAPI3', 'CD56', 'NCR1', 'CK8', 'CD45', 
@@ -25,7 +25,7 @@ def get_channel_info():
                 'HLADRB1','CD3','CD11b','CD4','CD45',
                 'CD163','CD66b','PD1','GZMB','NKX31',
                 'CK8','AMACR','FOXP3']
-    
+    '''
     keep_channels = [ch for ch in channels if (('DAPI' not in ch) or (('DAPI' in ch) and (ch == 'DAPI1'))) and (ch != 'c2')]
     keep_channels_idx = [i for i,ch in enumerate(channels) if ch in keep_channels]
     ch2idx = {ch:i for i,ch in enumerate(keep_channels)}

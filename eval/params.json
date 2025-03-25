@@ -1,6 +1,6 @@
-{"channels":22,
+{"channels":17,
  "decoder_dim":1024,
- "decoder_depth":6,
+ "decoder_depth":8,
  "decoder_heads":4,
  "decoder_dim_head":64
 }

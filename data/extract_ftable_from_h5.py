@@ -4,11 +4,11 @@ import numpy as np
 from einops import repeat 
 
 
-path = '/home/groups/ChangLab/dataset/ORION-CRC/orion_crc_dataset_sid=CRC05.h5'
+path = '/mnt/scratch/ORION-CRC-Unnormalized/orion_crc_dataset_sid=CRC05.h5'
 save_fname = 'CRC05_processed_feature_table.csv'
 f = h5py.File(path)
 
-ims = f['images'][:,:,:,:-2]
+ims = f['images'][:,:,:,:-3]
 masks = f['masks'][:]
 meta = f['metadata'][:]
 

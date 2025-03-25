@@ -12,7 +12,7 @@ from einops import repeat, rearrange
 
 
 class SingleCellDataset(Dataset):
-    def __init__(self, images, masks, metadata, downscale=False, remove_background=False, remove_he=True, deconvolve_he=True, rescale=True):
+    def __init__(self, images, masks, metadata, downscale=False, remove_background=False, remove_he=True, deconvolve_he=True, rescale=True, no_he=False):
         self.images = images
         self.masks = masks
         self.metadata = metadata
@@ -21,6 +21,10 @@ class SingleCellDataset(Dataset):
         self.downscale = downscale
         self.deconvolve_he = deconvolve_he
         self.rescale = rescale
+        self.no_he = no_he
+        #dataset2model
+        self.lunaphore2aced = False #lunaphore data, aced model
+        self.aced2lunaphore = False #aced data, lunaphore model
 
     def __len__(self):
         return len(self.images)
@@ -37,7 +41,7 @@ class SingleCellDataset(Dataset):
         if self.remove_he:
             tensor = tensor[:-3] #cut off the last three channels (which are the H&E channels)
         else:
-            if self.deconvolve_he:
+            if self.deconvolve_he and not self.no_he:
                 he = tensor[-3:].numpy()
                 he = np.moveaxis(he,0,2)
                 import histomicstk as htk
@@ -62,7 +66,30 @@ class SingleCellDataset(Dataset):
             tensor[mask == 0] = 0
             mask = mask[0]
         if self.rescale:
-            tensor = (tensor / 127.5) - 1.0   
+            #tensor = (tensor / 127.5) - 1.0 
+            
+            if self.remove_he or self.no_he:
+                #tensor = np.log(tensor + 1)
+                #tensor = (tensor / 4.9) - 1.0 
+                tensor = (tensor / 127.5) - 1.0 
+            else:
+                tensor = (tensor / 127.5) - 1.0
+                #tensor[:-3] = np.log(tensor[:-3] + 1)
+                #tensor[:-3] = (tensor[:-3] / np.log(32768)) - 1.0
+                #tensor[-3:] = (tensor[-3:] / 127.5) - 1.0
+                
+        lun_common_channels = [0, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 17, 18, 19, 22, 23, 27, 28, 29, 30, 31, 34, 35, 38, 42]
+        aced_common_channels = [0, 13, 26, 9, 11, 10, 5, 17, 28, 8, 4, 1, 20, 24, 12, 36, 6, 3, 22, 31, 29, 7, 2, 19, 14]
+        if self.lunaphore2aced:
+            tensor_ = torch.ones(40, 32, 32) * -1.0
+            tensor_[aced_common_channels] = tensor[lun_common_channels]
+            return tensor_, mask, meta
+        
+        if self.aced2lunaphore:
+            tensor_ = torch.ones(43, 32, 32) * -1.0
+            tensor_[lun_common_channels] = tensor[aced_common_channels]
+            return tensor_, mask, meta
+            
         return tensor, mask, meta
 
     

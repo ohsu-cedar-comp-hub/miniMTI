@@ -52,6 +52,7 @@ def get_intensities(model, panel, val_loader, ch2stain, calculate_ssims=False, d
     mints = torch.zeros((len(val_loader.dataset), len(masked_ch_idx)), device='cpu')
     pmints = mints.clone()
     ssims = torch.zeros(len(val_loader.dataset), device='cpu') if calculate_ssims else None
+    meta = []
 
     print(f"-- Processing batches ......")
 
@@ -77,18 +78,18 @@ def get_intensities(model, panel, val_loader, ch2stain, calculate_ssims=False, d
                 all_preds = gather(all_preds)
                 preds = torch.stack(all_preds).reshape(gt.shape)
                 '''
-                out,token_ids,labels = model.predict(gt, masked_ch_idx=masked_ch_idx)
+                T = 1
+                temp = 0
+                out,token_ids,labels = model.predict(gt, masked_ch_idx=masked_ch_idx, T=T, temp=temp)
                 preds = model.detokenize(token_ids, batch_size=gt.shape[0]).reshape(gt.shape)
-                #out, token_ids, labels = model.forward(gt, masked_ch_idx=masked_ch_idx)
-                #preds = model.decode(token_ids, labels, out['logits'], len(gt))
                 
             else:
                 panel_patches, gt, preds, _, _ = model.forward((gt, masks, filepaths), masked_patch_idx=masked_ch_idx)
 
         # reshape gt and preds from torch.Size([batch_size, 16, 1024]) to torch.Size([batch_size, 16, 32, 32])
         if model_type != 'mvtm':
-            preds_reshape = rearrange(preds, 'b c (h w) -> b c h w', h=32)
-            gt_reshape = rearrange(gt, 'b c (h w) -> b c h w', h=32)
+            preds = rearrange(preds, 'b c (h w) -> b c h w', h=32)
+            gt = rearrange(gt, 'b c (h w) -> b c h w', h=32)
 
             
         if model_type == 'mvtm':
@@ -106,11 +107,11 @@ def get_intensities(model, panel, val_loader, ch2stain, calculate_ssims=False, d
         e = s + batch_size
         mints[s:e, :] = mints_.to('cpu')
         pmints[s:e, :] = pmints_.to('cpu')
+        meta.extend(filepaths)
 
         # SSIM calculation if requested
         if calculate_ssims:
-            preds_reshape[preds_reshape < 0] = 0
-            ssims_ = ssim(gt_reshape, preds_reshape, reduction='none')
+            ssims_ = ssim(gt, preds, reduction='none')
             ssims_ = ssims_.to('cpu')
             ssims[s:e] = ssims_
 
@@ -121,7 +122,7 @@ def get_intensities(model, panel, val_loader, ch2stain, calculate_ssims=False, d
             torch.cuda.empty_cache()
 
     if return_meta:
-        return mints, pmints, ssims, filepaths
+        return mints, pmints, ssims, meta
     return mints, pmints, ssims
 
 

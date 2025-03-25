@@ -262,7 +262,6 @@
     "1010133":{
         "IF":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_cIF/Day15/20250203_150224_1_pLN4Bu_ACED_Final_1010133/20250203_150224_1_pLN4Bu_ACED_Final_1010133.tiff",
         "HE":"/arc/scratch1/ece/ACED_Reimagine_Batch1/ACED_B1_HE/Day15/2025_02_12__1010133.czi",
-        "HE":"",
         "cell-mask":"/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day14/20250129_131106_1_uZCTy8_ACED_Final_1010061/20250129_131106_1_uZCTy8_ACED_Final_1010061_mesmer_cell_mask.tif"
     },
     "1010092":{

@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from torchmetrics.functional import structural_similarity_index_measure as ssim
 from torchmetrics.functional import spearman_corrcoef as spearman
 from torch.optim.lr_scheduler import LambdaLR
-from mae import MAE
+from mae_enc_dec import MAE
 
 class IF_MAE(pl.LightningModule):
     def __init__(self,

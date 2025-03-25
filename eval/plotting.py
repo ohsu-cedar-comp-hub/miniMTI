@@ -9,15 +9,18 @@ def plot_scatter(mints, pmints, corrs_per_marker, masked_ch_idx, ch2stain, save_
     fig, ax = plt.subplots(1, len(masked_ch_idx), figsize=(12 * len(masked_ch_idx), 12), layout='tight')
     for i,a in enumerate(fig.axes):
         a.set_title(f'{ch2stain[masked_ch_idx[i]]}\n(⍴={round(corrs_per_marker[i].item(),2)})', fontsize=120)
-        x,y = mints[:20000,i].cpu(), pmints[:20000,i].cpu()
+        x,y = mints[:50000,i].cpu(), pmints[:50000,i].cpu()
         # Calculate the point density
         xy = np.vstack([x,y])
-        z = gaussian_kde(xy)(xy)
-        a.scatter(x, y, c=z, s=10)
+        #z = gaussian_kde(xy)(xy)
+        #a.scatter(x, y, c=z, s=10)
+        a.scatter(x, y, s=10)
         a.set_xticks([])
         a.set_yticks([])
         a.plot(np.arange(255), np.arange(255), linestyle='dashed', c='black')
+        #a.plot(np.linspace(-1,1), np.linspace(-1,1), linestyle='dashed', c='black')
     plt.savefig(f"plots/{save_id}/scatter_{len(masked_ch_idx)}_masked.png")
+    plt.close()
 
     
 def plot_heatmap(corrs_per_panel_size, panel_order, NUM_CHANNELS, ch2stain, save_id):
@@ -57,23 +60,25 @@ def plot_heatmap(corrs_per_panel_size, panel_order, NUM_CHANNELS, ch2stain, save
     plt.xlabel('Next Marker Added to Panel', fontsize=36)
     plt.ylabel('Predicted Marker', fontsize=36)
     plt.savefig(f'plots/{save_id}/heatmap.png')
+    plt.close()
     
     
 def plot_hist(mints, pmints, masked_ch_idx, ch2stain, save_id):
     fig, ax = plt.subplots(2, len(masked_ch_idx), figsize=(64,8))
     markers = [ch2stain[i] for i in masked_ch_idx]
     if len(markers) == 1:
-        ax[0].hist(mints[:].cpu(), bins=1000, range=(0,255))
+        ax[0].hist(mints[:50_000].cpu(), bins=1000, range=(0,255))
         ax[0].set_title(f'real {marker}')
-        ax[1].hist(pmints[:].cpu(), bins=1000, range=(0,255))
+        ax[1].hist(pmints[:50_000].cpu(), bins=1000, range=(0,255))
         ax[1].set_title(f'predicted {marker}')
     else:    
         for i,marker in enumerate(markers):
-            ax[0,i].hist(mints[:,i].cpu(), bins=1000, range=(0,255))
+            ax[0,i].hist(mints[:50_000,i].cpu(), bins=1000, range=(0,255))
             ax[0,i].set_title(f'real {marker}')
-            ax[1,i].hist(pmints[:,i].cpu(), bins=1000, range=(0,255))
+            ax[1,i].hist(pmints[:50_000,i].cpu(), bins=1000, range=(0,255))
             ax[1,i].set_title(f'predicted {marker}')
     plt.savefig(f"plots/{save_id}/histograms_{len(masked_ch_idx)}_masked.png")
+    plt.close()
     
     
 def plot_violin(corrs_per_panel_size, NUM_CHANNELS, save_id):

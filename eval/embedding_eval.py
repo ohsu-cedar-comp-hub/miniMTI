@@ -17,10 +17,12 @@ from scipy.spatial import distance_matrix
 from eval_mae import IF_MAE
 sys.path.append('../data')
 #from process_cedar_biolib_immune import get_channel_info
-from process_aced_immune import get_channel_info
+#from process_aced_immune_stitch2 import get_channel_info
+from process_orion_crc import get_channel_info
 
 def get_ckpt(ckpt_id):
-    dir_ = f"../training/cedar-panel-reduction/{ckpt_id}/checkpoints/"
+     #dir_ = f"../training/cedar-panel-reduction/{ckpt_id}/checkpoints/"
+    dir_ = f"/home/groups/ChangLab/sakiyama/cycif-panel-reduction/training/ORION-CRC/{ckpt_id}/checkpoints/"
     fname = os.listdir(dir_)[0]
     return f"{dir_}/{fname}"
 
@@ -77,8 +79,7 @@ def plot_tsne(embeddings, channel_labels, model_id):
     plt.savefig(f'plots/{model_id}/tsne_plot.png')
     
 if __name__ == '__main__':
-    device = torch.device('cuda:1')
-    model_id = 'djqmufd1'
+    model_id = '76ojm3rg'
     param_file="params.json"
 
     if not os.path.exists(f'plots/{model_id}'): os.mkdir(f'plots/{model_id}')
@@ -88,7 +89,6 @@ if __name__ == '__main__':
 
     ckpt = get_ckpt(model_id)
     model = IF_MAE(**params).load_from_checkpoint(ckpt, **params)
-    model = model.to(device)
     model = model.eval()
 
     keep_channels, keep_channels_idx, ch2idx = get_channel_info()

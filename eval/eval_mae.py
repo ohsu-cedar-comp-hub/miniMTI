@@ -1,7 +1,7 @@
 import sys
 import pytorch_lightning as pl
 sys.path.append('../training')
-from mae import MAE
+from mae_enc_dec import MAE
 
 class IF_MAE(pl.LightningModule):
     def __init__(self, 

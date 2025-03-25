@@ -12,22 +12,24 @@ from data import get_train_dataloaders
     
 def train_model(val_id):
     NUM_EPOCHS = 100
-    BATCH_SIZE = 2048
+    BATCH_SIZE = 64
     NUM_VAL_SAMPLES = 10_000
-    #train_file = f'/mnt/scratch/biolib-immune-norm/train-{val_id}-out.h5'
-    train_file = f'/mnt/scratch/aced-immune-norm/train-batch-2-out.h5'
-    #val_file = f'/mnt/scratch/biolib-immune-norm/biolib_immune_dataset_normed_sid={val_id}.h5'
-    val_file = f'/mnt/scratch/aced-immune-norm/aced_immune_dataset_norm_sid=15-1-A-2_scene004.h5'
-    train_loader, val_loader = get_train_dataloaders(train_file, val_file, BATCH_SIZE, NUM_VAL_SAMPLES)                         
+    #train_file = '/mnt/scratch/ORION-CRC-Unnormalized/train-CRC05-06-out.h5'
+    #val_file = '/mnt/scratch/ORION-CRC-Unnormalized/val-CRC05-06.h5'
+    #train_file = '/arc/scratch1/ChangLab/orion-crc/train-CRC05-06-out.h5'
+    #val_file = '/arc/scratch1/ChangLab/orion-crc/val-CRC05-06.h5'
+    train_file = '/arc/scratch1/ChangLab/aced-immune-norm-40mx/train-batch6-out.h5'
+    val_file = '/arc/scratch1/ChangLab/aced-immune-norm-40mx/val-batch6.h5'
+    train_loader, val_loader = get_train_dataloaders(train_file, val_file, BATCH_SIZE, NUM_VAL_SAMPLES, remove_he=False, downscale=True, deconvolve_he=False, remove_background=False, rescale=False)                         
     
-    lr=1e-5
+    lr=1e-4
     image_size = 32
-    num_channels = 22
+    num_channels = 41
     masking_ratio = 'random'
-    weight_decay=0.01
-    decoder_dim=1024
-    decoder_depth = 6
-    decoder_heads = 4
+    weight_decay=0.001
+    decoder_dim=2048
+    decoder_depth = 8
+    decoder_heads = 6
     decoder_dim_head = 64
            
     wandb_logger = WandbLogger(project="cedar-panel-reduction", entity='changlab', resume='allow', log_model=False)
@@ -38,7 +40,7 @@ def train_model(val_id):
         fname = os.listdir(dir_)[0]
         return f"{dir_}/{fname}"
     
-    ckpt = get_ckpt('7u2ixfa8')
+    ckpt = get_ckpt('6vtoavjz')
     params = dict(lr = lr,
                    image_size=image_size,
                    num_channels=num_channels,
@@ -49,8 +51,8 @@ def train_model(val_id):
                    decoder_heads = decoder_heads,
                    decoder_dim_head = decoder_dim_head)
     
-    model = IF_MAE(**params).load_from_checkpoint(ckpt, **params)
-    #model = IF_MAE(**params)
+    #model = IF_MAE(**params).load_from_checkpoint(ckpt, **params)
+    model = IF_MAE(**params)
     wandb_logger.watch(model, log="all")
     
     torch.set_float32_matmul_precision('high')

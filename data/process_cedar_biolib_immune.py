@@ -133,7 +133,7 @@ def extract_cells(IF, cell_mask, sample_name, save_dir, crop_size, num_channels)
         mask = repeat(mask, 'h w -> c h w', c=num_channels)
 
         #check for segmentation error
-        if im[0].mean() == 0: 
+        if im[0].mean() <= 125: 
             num_removed_from_seg += 1
             continue 
             

@@ -89,7 +89,7 @@ class MAE(nn.Module):
         self.to_pixels = nn.Sequential(nn.Linear(decoder_dim, pixel_values_per_patch), nn.ReLU())
           
 
-    def forward(self, batch, masked_patch_idx=None, fine_tune=True):
+    def forward(self, batch, masked_patch_idx=None, fine_tune=False):
         img,mask,_  = batch
         device = img.device
         # get patches
@@ -130,7 +130,8 @@ class MAE(nn.Module):
         batch_range = torch.arange(batch, device = device)[:, None]
         tokens = tokens[batch_range].squeeze()
         
-        masked_patches = patches[batch_range, masked_indices]
+        if num_masked > 0:
+            masked_patches = patches[batch_range, masked_indices]
         
         ########### TODO: get the panel marker as well ##########
         panel_patches = patches[batch_range, unmasked_indices]
@@ -141,12 +142,18 @@ class MAE(nn.Module):
         tokens = torch.cat((cls_tokens, tokens), dim=1)
 
         # repeat mask tokens for number of masked, and add the positions using the masked indices derived above
-        mask_tokens = repeat(self.mask_token, 'd -> b n d', b=batch, n=num_masked)
-        mask_tokens = mask_tokens + self.pos_embedding[:, masked_indices+1]
+        if num_masked > 0:
+            mask_tokens = repeat(self.mask_token, 'd -> b n d', b=batch, n=num_masked)
+            mask_tokens = mask_tokens + self.pos_embedding[:, masked_indices+1]
 
-        tokens[batch_range, masked_indices+1] = mask_tokens
+            tokens[batch_range, masked_indices+1] = mask_tokens
+            
         decoded_tokens, attn_maps = self.decoder(tokens)
-
+        
+        
+        if num_masked == 0:
+            return None, None, None, decoded_tokens, attn_maps, None
+        
         # splice out the mask tokens and project to pixel values
         mask_tokens = decoded_tokens[batch_range, masked_indices+1]
         pred_pixel_values = self.to_pixels(mask_tokens)
