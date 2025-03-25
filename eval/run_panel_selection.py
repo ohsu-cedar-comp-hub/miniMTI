@@ -222,7 +222,7 @@ def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id,
                 params = json.load(f)
         else:
             params = {'channels':max_panel_size}
-        params['cls_token'] = False
+        #params['cls_token'] = False
         if model_type == 'mvtm':
             model = IF_MVTM(**params).load_from_checkpoint(os.path.join(ckpt, model_name), **params).to(device).eval()
         else:
