@@ -254,6 +254,8 @@ def main(dataset, dataset_size, remove_background, ckpt, max_panel_size, gpu_id,
         
     output_filename = f"{dataset[0].split('/')[-1]}_{ckpt.split('/')[-3]}_panel_order_{method_suffix}.txt"
     output_path = os.path.join('orderings', output_filename)
+    if not os.path.exists('orderings'):
+        os.mkdir('orderings')
     with open(output_path, 'w') as f:
         f.write(str(top_panel))
     print(f"Panel order output saved to {output_path}")
