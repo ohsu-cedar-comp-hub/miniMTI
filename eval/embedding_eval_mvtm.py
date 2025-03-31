@@ -12,7 +12,7 @@ from sklearn.manifold import TSNE
 import scipy.cluster.hierarchy as sch
 from sklearn.metrics.pairwise import cosine_similarity
 
-sys.path.append('/home/groups/ChangLab/govindsa/cycif-panel-reduction/training/MVTM')
+sys.path.append('../training/MVTM')
 from mvtm import IF_MVTM
 
 def get_model_embeddings(model, params):
@@ -52,7 +52,7 @@ def main():
     parser.add_argument('--ckpt', type=str, required=True, help='Path to the checkpoint file.')
     parser.add_argument('--params', type=str, required=True, help='Path to the parameters JSON file.')
     parser.add_argument('--device', type=str, default='cuda:1', help='Device to run the model on.')
-    parser.add_argument('--model_id', type=str, default='crc-orion-if-1024', help='Device to run the model on.')
+    parser.add_argument('--model_id', type=str, default='crc-orion-if-1024', help='name for directory to save plots to')
 
     args = parser.parse_args()
 
@@ -66,14 +66,10 @@ def main():
     model = model.eval()
 
     # Define channel-to-index mapping
-    ch2idx = {
-        'DAPI': 0, 'CD31': 1, 'CD45': 2, 'CD68': 3, 'CD4': 4, 'FOXP3': 5, 
-        'CD8A': 6, 'CD45RO': 7, 'CD20': 8, 'PD-L1': 9, 'CD3e': 10, 'CD163': 11, 
-        'E-cadherin': 12, 'PD-1': 13, 'Ki67': 14, 'PanCK': 15, 'aSMA': 16
-    }
-
-    ch2stain = {i: ch for ch, i in ch2idx.items()}
-    channel_labels = ['cls'] + list(ch2stain.values())
+    sys.path.append('../data')
+    from lunaphore_channel_info import get_channel_info
+    channel_labels, channel_idx, ch2idx = get_channel_info()
+    
 
     # Get model embeddings
     embeddings = get_model_embeddings(model, params)
