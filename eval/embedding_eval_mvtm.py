@@ -15,8 +15,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 sys.path.append('../training/MVTM')
 from mvtm import IF_MVTM
 
-def get_model_embeddings(model, params):
-    return model.tokenizer.quantize.embedding.weight.detach().cpu().numpy()
+def get_model_embeddings(model, params, emb_type='markers'):
+    if emb_type = 'tokens':
+        return model.tokenizer.quantize.embedding.weight.detach().cpu().numpy()
+    if emb_type = 'markers':
+        return model.mvtm.roberta.embeddings.token_type_embeddings.weight.cpu().detach().numpy()
 
 def cluster_corr(corr_array, inplace=False):
     pairwise_distances = sch.distance.pdist(corr_array)
@@ -33,7 +36,7 @@ def cluster_corr(corr_array, inplace=False):
 
 def plot_distance_matrix(embeddings, channel_labels, model_id):
     idx, dists = cluster_corr(cosine_similarity(embeddings, embeddings))
-    fig, ax = plt.subplots(figsize=(16, 14))
+    fig, ax = plt.subplots(figsize=(embeddings.shape[0], embeddings.shape[0]))
     sns.heatmap(dists, cmap='vlag', vmax=0.05, vmin=-0.05)
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
     plt.setp(ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
