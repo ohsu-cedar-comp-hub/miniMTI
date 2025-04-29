@@ -30,17 +30,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='merges individual h5 files per sample into combined training and validation files')
     parser.add_argument("--data-dir", type=str, required=True, help="Path to directory containing h5 files")
     parser.add_argument("--val-samples", type=str, default=None, help="path to file containing validation sample names")
+    parser.add_argument("--train-samples", type=str, required=False, default=None, help="path to file containing training sample names")
     parser.add_argument("--batch-name", type=str, default=None, help="Name for validation batch")
     args = parser.parse_args()
     
     with open(args.val_samples) as f:
         val_samples = f.readlines()
         
+    if args.train_samples is not None:
+        with open(args.train_samples) as f:
+            train_samples = f.readlines()
+        
     train_files, val_files = [],[]
     for h5file in os.listdir(args.data_dir):
         if not h5file.endswith('h5'): continue
         if all([s not in h5file for s in val_samples]) and 'train' not in h5file:
-            train_files.append(h5py.File(f"{args.data_dir}/{h5file}", "r"))
+            if args.train_samples is not None:
+                if any([s in h5file for s in train_samples]):
+                    train_files.append(h5py.File(f"{args.data_dir}/{h5file}", "r"))
+            else:
+                train_files.append(h5py.File(f"{args.data_dir}/{h5file}", "r"))
         else:
             val_files.append(h5py.File(f"{args.data_dir}/{h5file}", "r"))
             
