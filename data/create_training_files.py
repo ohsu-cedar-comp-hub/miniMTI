@@ -35,11 +35,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     with open(args.val_samples) as f:
-        val_samples = f.readlines()
+        val_samples = [s.strip() for s in f.readlines()]
         
     if args.train_samples is not None:
         with open(args.train_samples) as f:
-            train_samples = f.readlines()
+            train_samples = [s.strip() for s in f.readlines()]
         
     train_files, val_files = [],[]
     for h5file in os.listdir(args.data_dir):
