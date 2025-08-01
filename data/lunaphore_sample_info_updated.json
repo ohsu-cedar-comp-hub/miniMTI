@@ -2,12 +2,12 @@
     "1010005": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day18/20250324_120220_2_GEzZRK_ACED_Final_1010005/20250324_120220_2_GEzZRK_ACED_Final_1010005.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day18/2025_04_03__09_54__1010005.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day18/20250324_120220_2_GEzZRK_ACED_Final_1010005/20250324_120220_2_GEzZRK_ACED_Final_1010005_mesmer_cell_mask.tif"
     },
     "1010019": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day18/20250324_120221_3_JoOzL4_ACED_Final_1010019/20250324_120221_3_JoOzL4_ACED_Final_1010019.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day18/2025_04_03__09_54__1010019.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day18/20250324_120221_3_JoOzL4_ACED_Final_1010019/20250324_120221_3_JoOzL4_ACED_Final_1010019_mesmer_cell_mask.tif"
     },
     "1010024": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day13/20250127_134130_3_jUGoVv_ACED_Final_1010024/20250127_134130_3_jUGoVv_ACED_Final_1010024.tiff",
@@ -17,12 +17,12 @@
     "1010027": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day18/20250324_120221_4_p65Dnw_ACED_Final_1010027/20250324_120221_4_p65Dnw_ACED_Final_1010027.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day18/2025_04_03__09_53__1010027.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day18/20250324_120221_4_p65Dnw_ACED_Final_1010027/20250324_120221_4_p65Dnw_ACED_Final_1010027_mesmer_cell_mask.tif"
     },
     "1010038": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day19/20250326_115345_1_lAN5Wc_ACED_Final_1010038/20250326_115345_1_lAN5Wc_ACED_Final_1010038.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day19/2025_04_03__09_55__1010038.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day19/20250326_115345_1_lAN5Wc_ACED_Final_1010038/20250326_115345_1_lAN5Wc_ACED_Final_1010038_mesmer_cell_mask.tif"
     },
     "1010060": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day13/20250127_134131_4_Fnx1xn_ACED_Final_1010060/20250127_134131_4_Fnx1xn_ACED_Final_1010060.tiff",
@@ -37,27 +37,27 @@
     "1010077": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day19/20250326_115345_2_nklVQM_ACED_Final_1010077/20250326_115345_2_nklVQM_ACED_Final_1010077.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day19/2025_04_03__09_55__1010077.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day19/20250326_115345_2_nklVQM_ACED_Final_1010077/20250326_115345_2_nklVQM_ACED_Final_1010077_mesmer_cell_mask.tif"
     },
     "1010079": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day19/20250326_115345_3_K2TjsE_ACED_Final_1010079/20250326_115345_3_K2TjsE_ACED_Final_1010079.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day19/2025_04_03__09_55__1010079.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day19/20250326_115345_4_qKAwK7_ACED_Final_1010081/20250326_115345_4_qKAwK7_ACED_Final_1010081_mesmer_cell_mask.tif"
     },
     "1010081": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day19/20250326_115345_4_qKAwK7_ACED_Final_1010081/20250326_115345_4_qKAwK7_ACED_Final_1010081.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day19/2025_04_03__09_55__1010081.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day19/20250326_115345_4_qKAwK7_ACED_Final_1010081/20250326_115345_4_qKAwK7_ACED_Final_1010081_mesmer_cell_mask.tif"
     },
     "1010086": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day20/20250404_144239_1_UhAUju_ACED_Final_1010086/20250404_144239_1_UhAUju_ACED_Final_1010086.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day20/2025_05_06__10_12__1010086.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day20/20250404_144239_1_UhAUju_ACED_Final_1010086/20250404_144239_1_UhAUju_ACED_Final_1010086_mesmer_cell_mask.tif"
     },
     "1010089": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day20/20250404_144239_2_0zriBn_ACED_Final_1010089/20250404_144239_2_0zriBn_ACED_Final_1010089.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day20/2025_05_06__10_12__1010089.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day20/20250404_144239_2_0zriBn_ACED_Final_1010089/20250404_144239_2_0zriBn_ACED_Final_1010089_mesmer_cell_mask.tif"
     },
     "1010092": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day14/20250129_131106_2_wAauss_ACED_Final_1010092/20250129_131106_2_wAauss_ACED_Final_1010092.tiff",
@@ -67,12 +67,12 @@
     "1010097": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day20/20250404_144239_3_3ZG85X_ACED_Final_1010097/20250404_144239_3_3ZG85X_ACED_Final_1010097.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day20/2025_05_06__10_12__1010097.czi",
-        "cell-mask": ""
+        "cell-mask": "home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day20/20250404_144239_3_3ZG85X_ACED_Final_1010097/20250404_144239_3_3ZG85X_ACED_Final_1010097_mesmer_cell_mask.tif"
     },
     "1010098": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day21/20250407_131851_1_TpHDMQ_ACED_Final_1010098/20250407_131851_1_TpHDMQ_ACED_Final_1010098.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day21/2025_05_06__10_13__1010098.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day21/20250407_131851_1_TpHDMQ_ACED_Final_1010098/20250407_131851_1_TpHDMQ_ACED_Final_1010098_mesmer_cell_mask.tif"
     },
     "1010132": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day14/20250129_131107_3_TSI7Kl_ACED_Final_1010132/20250129_131107_3_TSI7Kl_ACED_Final_1010132.tiff",
@@ -87,17 +87,17 @@
     "1010142": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day21/20250407_131851_2_z7yRnI_ACED_Final_1010142/20250407_131851_2_z7yRnI_ACED_Final_1010142.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day21/2025_05_06__10_13__1010142.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day21/20250407_131851_2_z7yRnI_ACED_Final_1010142/20250407_131851_2_z7yRnI_ACED_Final_1010142_mesmer_cell_mask.tif"
     },
     "1010147": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day22/20250416_123812_3_Msoqme_ACED_Final_1010147/20250416_123812_3_Msoqme_ACED_Final_1010147.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day22/2025_05_06__10_14__1010147.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day22/20250416_123812_3_Msoqme_ACED_Final_1010147/20250416_123812_3_Msoqme_ACED_Final_1010147_mesmer_cell_mask.tif"
     },
     "1010149": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day21/20250407_131852_3_Zz449v_ACED_Final_1010149/20250407_131852_3_Zz449v_ACED_Final_1010149.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day21/2025_05_06__10_13__1010149.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day21/20250407_131852_3_Zz449v_ACED_Final_1010149/20250407_131852_3_Zz449v_ACED_Final_1010149_mesmer_cell_mask.tif"
     },
     "1010158": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day1/20241016_122632_1_YXA8KS_ACED_Final_1010158/20241016_122632_1_YXA8KS_ACED_Final_1010158.tiff",
@@ -107,12 +107,12 @@
     "1010163": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day21/20250407_131852_4_5IlHbn_ACED_Final_1010163/20250407_131852_4_5IlHbn_ACED_Final_1010163.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day21/2025_05_06__10_13__1010163.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day21/20250407_131852_4_5IlHbn_ACED_Final_1010163/20250407_131852_4_5IlHbn_ACED_Final_1010163_mesmer_cell_mask.tif"
     },
     "1010171": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day22/20250416_123812_4_iZzG0d_ACED_Final_1010171/20250416_123812_4_iZzG0d_ACED_Final_1010171.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day22/2025_05_06__10_14__1010171.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day22/20250416_123812_4_iZzG0d_ACED_Final_1010171/20250416_123812_4_iZzG0d_ACED_Final_1010171_mesmer_cell_mask.tif"
     },
     "1010173": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day1/20241016_122632_2_uELYYQ_ACED_Final_1010173/20241016_122632_2_uELYYQ_ACED_Final_1010173.tiff",
@@ -127,32 +127,32 @@
     "1010186": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day22/20250416_123811_1_n0iDQ2_ACED_Final_1010186/20250416_123811_1_n0iDQ2_ACED_Final_1010186.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day22/2025_05_06__10_14__1010186.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day22/20250416_123811_1_n0iDQ2_ACED_Final_1010186/20250416_123811_1_n0iDQ2_ACED_Final_1010186_mesmer_cell_mask.tif"
     },
     "1010191": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day22/20250416_123812_2_pa6dKm_ACED_Final_1010191/20250416_123812_2_pa6dKm_ACED_Final_1010191.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day22/2025_05_06__10_14__1010191.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day22/20250416_123812_2_pa6dKm_ACED_Final_1010191/20250416_123812_2_pa6dKm_ACED_Final_1010191_mesmer_cell_mask.tif"
     },
     "1010192": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day23/20250425_140717_1_I6Gg4r_ACED_Final_1010192/20250425_140717_1_I6Gg4r_ACED_Final_1010192.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day23/2025_05_06__10_14__1010192.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day23/20250425_140717_1_I6Gg4r_ACED_Final_1010192/20250425_140717_1_I6Gg4r_ACED_Final_1010192_mesmer_cell_mask.tif"
     },
     "1010201": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day23/20250425_140718_2_pPxuWj_ACED_Final_1010201/20250425_140718_2_pPxuWj_ACED_Final_1010201.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day23/2025_05_06__10_14__1010201.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day23/20250425_140718_2_pPxuWj_ACED_Final_1010201/20250425_140718_2_pPxuWj_ACED_Final_1010201_mesmer_cell_mask.tif"
     },
     "1010203": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day23/20250425_140718_3_Lhf7yb_ACED_Final_1010203/20250425_140718_3_Lhf7yb_ACED_Final_1010203.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day23/2025_05_06__10_14__1010203.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day23/20250425_140718_3_Lhf7yb_ACED_Final_1010203/20250425_140718_3_Lhf7yb_ACED_Final_1010203_mesmer_cell_mask.tif"
     },
     "1010212": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day23/20250425_140718_4_rzMKQU_ACED_Final_1010212/20250425_140718_4_rzMKQU_ACED_Final_1010212.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day23/2025_05_06__10_15__1010212.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day23/20250425_140718_4_rzMKQU_ACED_Final_1010212/20250425_140718_4_rzMKQU_ACED_Final_1010212_mesmer_cell_mask.tif"
     },
     "1010213": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day15/20250206_113511_2_WGRzs5_ACED_Final_1010213/20250206_113511_2_WGRzs5_ACED_Final_1010213.tiff",
@@ -162,7 +162,7 @@
     "1010216": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day24/20250428_134146_1_HsgeNF_ACED_Final_1010216/20250428_134146_1_HsgeNF_ACED_Final_1010216.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day24/2025_05_27__11_46__1010216.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day24/20250428_134146_1_HsgeNF_ACED_Final_1010216/20250428_134146_1_HsgeNF_ACED_Final_1010216_mesmer_cell_mask.tif"
     },
     "1010240": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day8/20241218_122958_1_aZv9Xf_ACED_Final_1010240/20241218_122958_1_aZv9Xf_ACED_Final_1010240.tiff",
@@ -172,7 +172,7 @@
     "1010244": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day24/20250428_134146_2_oANrp7_ACED_Final_1010244/20250428_134146_2_oANrp7_ACED_Final_1010244.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day24/2025_05_27__11_46__1010244.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day24/20250428_134146_2_oANrp7_ACED_Final_1010244/20250428_134146_2_oANrp7_ACED_Final_1010244_mesmer_cell_mask.tif"
     },
     "1010245": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day12/20250121_125250_3_gUtspz_ACED_Final_1010245/20250121_125250_3_gUtspz_ACED_Final_1010245.tiff",
@@ -282,7 +282,7 @@
     "1020029": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day24/20250428_134146_3_qkmIjs_ACED_Final_1020029/20250428_134146_3_qkmIjs_ACED_Final_1020029.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day24/2025_05_27__11_46__1020029.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day24/20250428_134146_3_qkmIjs_ACED_Final_1020029/20250428_134146_3_qkmIjs_ACED_Final_1020029_mesmer_cell_mask.tif"
     },
     "1020037": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day15/20250203_150225_3_HDMLDN_ACED_Final_1020037/20250203_150225_3_HDMLDN_ACED_Final_1020037.tiff",
@@ -292,7 +292,7 @@
     "1020049": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day25/20250501_112028_4_V6EJgI_ACED_Final_1020049/20250501_112028_4_V6EJgI_ACED_Final_1020049.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day25/2025_05_27__11_47__1020049.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day25/20250501_112028_4_V6EJgI_ACED_Final_1020049/20250501_112028_4_V6EJgI_ACED_Final_1020049_mesmer_cell_mask.tif"
     },
     "1020051": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day15/20250203_150225_4_oV3YfF_ACED_Final_1020051/20250203_150225_4_oV3YfF_ACED_Final_1020051.tiff",
@@ -302,12 +302,12 @@
     "1020092": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day24/20250428_134146_4_g9GUVy_ACED_Final_1020092/20250428_134146_4_g9GUVy_ACED_Final_1020092.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day24/2025_05_27__11_46__1020092.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day24/20250428_134146_4_g9GUVy_ACED_Final_1020092/20250428_134146_4_g9GUVy_ACED_Final_1020092_mesmer_cell_mask.tif"
     },
     "1020095": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day25/20250501_112028_1_NL22y3_ACED_Final_1020095/20250501_112028_1_NL22y3_ACED_Final_1020095.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day25/2025_05_27__11_46__1020095.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day25/20250501_112028_1_NL22y3_ACED_Final_1020095/20250501_112028_1_NL22y3_ACED_Final_1020095_mesmer_cell_mask.tif"
     },
     "1020100": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day25/Day16/20250210_133022_1_ph2SPN_ACED_Final_1020100/20250210_133022_1_ph2SPN_ACED_Final_1020100.tiff",
@@ -317,7 +317,7 @@
     "1020112": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day25/20250501_112028_2_wD8fKf_ACED_Final_1020112/20250501_112028_2_wD8fKf_ACED_Final_1020112.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day25/2025_05_27__11_46__1020112.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day25/20250501_112028_2_wD8fKf_ACED_Final_1020112/20250501_112028_2_wD8fKf_ACED_Final_1020112_mesmer_cell_mask.tif"
     },
     "1020127": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day25/Day16/20250210_133022_2_vspJDs_ACED_Final_1020127/20250210_133022_2_vspJDs_ACED_Final_1020127.tiff",
@@ -337,32 +337,32 @@
     "1020134": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day17/20250321_122018_1_02whkz_ACED_Final_1020134/20250321_122018_1_02whkz_ACED_Final_1020134.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day17/2025_04_03__09_53__1020134.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day17/20250321_122018_1_02whkz_ACED_Final_1020134/20250321_122018_1_02whkz_ACED_Final_1020134_mesmer_cell_mask.tif"
     },
     "1020149": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day17/20250321_122018_2_3dK8ej_ACED_Final_1020149/20250321_122018_2_3dK8ej_ACED_Final_1020149.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day17/2025_04_03__09_53__1020149.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day17/20250321_122018_2_3dK8ej_ACED_Final_1020149/20250321_122018_2_3dK8ej_ACED_Final_1020149_mesmer_cell_mask.tif"
     },
     "1020153": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day26/20250519_102416_1_ylnpfh_ACED_Final_1020153/20250519_102416_1_ylnpfh_ACED_Final_1020153.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day26/2025_05_27__11_47__1020153.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day26/20250519_102416_1_ylnpfh_ACED_Final_1020153/20250519_102416_1_ylnpfh_ACED_Final_1020153_mesmer_cell_mask.tif"
     },
     "1020167": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day25/20250501_112028_3_TWptmX_ACED_Final_1020167/20250501_112028_3_TWptmX_ACED_Final_1020167.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day25/2025_05_27__11_47__1020167.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day25/20250501_112028_3_TWptmX_ACED_Final_1020167/20250501_112028_3_TWptmX_ACED_Final_1020167_mesmer_cell_mask.tif"
     },
     "1020168": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day17/20250321_122018_3_Zv2L6c_ACED_Final_1020168/20250321_122018_3_Zv2L6c_ACED_Final_1020168.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day17/2025_04_03__09_53__1020168.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day17/20250321_122018_3_Zv2L6c_ACED_Final_1020168/20250321_122018_3_Zv2L6c_ACED_Final_1020168_mesmer_cell_mask.tif"
     },
     "1020170": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day17/20250321_122019_4_6DjYYU_ACED_Final_1020170/20250321_122019_4_6DjYYU_ACED_Final_1020170.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day17/2025_04_03__09_54__1020170.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day17/20250321_122019_4_6DjYYU_ACED_Final_1020170/20250321_122019_4_6DjYYU_ACED_Final_1020170_mesmer_cell_mask.tif"
     },
     "1020179": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day11/20250114_142512_3_FsTt50_ACED_Final_1020179/20250114_142512_3_FsTt50_ACED_Final_1020179.tiff",
@@ -372,7 +372,7 @@
     "1020183": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day11/20250114_142512_4_lAA6Xs_ACED_Final_1020183/20250114_142512_4_lAA6Xs_ACED_Final_1020183.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day11/2025_01_30__1020183.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day11/20250114_142512_4_lAA6Xs_ACED_Final_10201830/20250114_142512_4_lAA6Xs_ACED_Final_10201830_mesmer_cell_mask.tif"
     },
     "1020224": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day12/20250121_125250_1_lubpFN_ACED_Final_1020224/20250121_125250_1_lubpFN_ACED_Final_1020224.tiff",
@@ -442,12 +442,12 @@
     "1030009": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day18/20250324_120220_1_Dda8XZ_ACED_Final_1030009/20250324_120220_1_Dda8XZ_ACED_Final_1030009.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day18/2025_04_03__09_54__1030009.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day18/20250324_120220_1_Dda8XZ_ACED_Final_1030009/20250324_120220_1_Dda8XZ_ACED_Final_1030009_mesmer_cell_mask.tif"
     },
     "1030011": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day26/20250519_102416_2_1LCFZS_ACED_Final_1030011/20250519_102416_2_1LCFZS_ACED_Final_1030011.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day26/2025_05_27__11_47__1030011.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day26/20250519_102416_2_1LCFZS_ACED_Final_1030011/20250519_102416_2_1LCFZS_ACED_Final_1030011_mesmer_cell_mask.tif"
     },
     "1030061": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day7/20241206_114535_1_R4n6fw_ACED_Final_1030061/20241206_114535_1_R4n6fw_ACED_Final_1030061.tiff",
@@ -472,7 +472,7 @@
     "486331-4": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day2/20241021_124621_1_JNw8nE_ACED_Final_486331-4/20241021_124621_1_JNw8nE_ACED_Final_486331-4.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day2/2024_11_26__486331-4.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day2/20241021_124621_1_JNw8nE_ACED_Final_486331-4/20241021_124621_1_JNw8nE_ACED_Final_486331-4_mesmer_cell_mask.tif"
     },
     "486331-5": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day5/20241202_132929_1_qyMJ8Q_ACED_Final_486331-5/20241202_132929_1_qyMJ8Q_ACED_Final_486331-5.tiff",
@@ -482,12 +482,12 @@
     "486331-6": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day25/Day16/20250210_133023_4_xSEk7d_ACED_Final_486331-6/20250210_133023_4_xSEk7d_ACED_Final_486331-6.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day16/2025_04_03__09_53__486331-6.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day16/20250210_133023_4_xSEk7d_ACED_Final_486331-6/20250210_133023_4_xSEk7d_ACED_Final_486331-6_mesmer_cell_mask.tif"
     },
     "486331-7": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day20/20250404_144240_4_ZsxLXP_ACED_Final_486331-7/20250404_144240_4_ZsxLXP_ACED_Final_486331-7.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day20/2025_05_06__10_12__486331-7.czi",
-        "cell-mask": ""
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day20/20250404_144240_4_ZsxLXP_ACED_Final_486331-7/20250404_144240_4_ZsxLXP_ACED_Final_486331-7_mesmer_cell_mask.tif"
     },
     "1010354": {
         "IF": "",
