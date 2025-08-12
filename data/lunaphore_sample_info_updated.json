@@ -42,7 +42,7 @@
     "1010079": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day19/20250326_115345_3_K2TjsE_ACED_Final_1010079/20250326_115345_3_K2TjsE_ACED_Final_1010079.tiff",
         "HE": "/home/groups/cedar-acedreimagine/H-Es/Day19/2025_04_03__09_55__1010079.czi",
-        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day19/20250326_115345_4_qKAwK7_ACED_Final_1010081/20250326_115345_4_qKAwK7_ACED_Final_1010081_mesmer_cell_mask.tif"
+        "cell-mask": "/home/groups/ChangLab/dataset/Lunaphore_segmentation/mesmer_masks/Day19/20250326_115345_3_K2TjsE_ACED_Final_1010079/20250326_115345_3_K2TjsE_ACED_Final_1010079_mesmer_cell_mask.tif"
     },
     "1010081": {
         "IF": "/home/groups/cedar-acedreimagine/cIF/Day19/20250326_115345_4_qKAwK7_ACED_Final_1010081/20250326_115345_4_qKAwK7_ACED_Final_1010081.tiff",
