@@ -88,11 +88,57 @@ class Tokenized_MVTM(pl.LightningModule):
         
         self.mvtm = RobertaForMaskedLM(config)
         
-    def mask_channels(self, token_ids, masked_ch_idx=None):
+    def extract_channel_tokens(self, token_ids, channel_indices):
+        """Extract tokens for specific channels from the full token sequence.
+
+        Args:
+            token_ids: [batch, num_markers * max_positions]
+            channel_indices: List of channel indices to extract (in order they should appear)
+
+        Returns:
+            extracted_tokens: [batch, len(channel_indices) * max_positions]
+        """
+        batch_size = token_ids.shape[0]
+        device = token_ids.device
+
+        # Extract tokens for each channel
+        extracted = []
+        for ch_idx in channel_indices:
+            start_idx = self.max_positions * ch_idx
+            end_idx = self.max_positions * (ch_idx + 1)
+            extracted.append(token_ids[:, start_idx:end_idx])
+
+        return torch.cat(extracted, dim=1)
+
+    def mask_channels(self, token_ids, masked_ch_idx=None, input_ch_idx=None, output_ch_idx=None):
         device = token_ids.device
         batch_size = token_ids.shape[0]
-        
-        if masked_ch_idx is not None:
+
+        # New interface: input_ch_idx and output_ch_idx
+        if input_ch_idx is not None and output_ch_idx is not None:
+            # Extract only input + output channel tokens
+            all_ch_idx = list(input_ch_idx) + list(output_ch_idx)
+            token_ids = self.extract_channel_tokens(token_ids, all_ch_idx)
+
+            # Create labels
+            labels = token_ids.clone()
+
+            # Mask only the output channels (which are at the end of the sequence)
+            num_input_channels = len(input_ch_idx)
+            for i, channel_i in enumerate(output_ch_idx):
+                # Channels are now indexed relative to the extracted sequence
+                relative_idx = num_input_channels + i
+                start_idx = self.max_positions * relative_idx
+                end_idx = self.max_positions * (relative_idx + 1)
+                token_ids[:, start_idx:end_idx] = self.mask_id
+
+            # Set labels: -100 for unmasked positions
+            labels[token_ids != self.mask_id] = -100
+
+            return token_ids, labels, all_ch_idx
+
+        # Legacy interface: masked_ch_idx
+        elif masked_ch_idx is not None:
             # Specific channel masking - more efficient implementation
             labels = token_ids.clone()
             # Process in place with less memory allocation
@@ -228,8 +274,9 @@ class Tokenized_MVTM(pl.LightningModule):
         if device.type == 'cuda':
             torch.cuda.synchronize()
             torch.cuda.empty_cache()
-        
-        return token_ids, labels
+
+        # Return None for all_ch_idx in legacy mode (using all channels)
+        return token_ids, labels, None
         
     def unmask(self, tokens, labels, logits, batch_size, k, temp=1.0):
         device = tokens.device
@@ -309,33 +356,52 @@ class Tokenized_MVTM(pl.LightningModule):
                 
             return tokens, labels
     
-    def _get_position_type_ids(self, device):
-        # Use weak references for these cached tensors to prevent memory leaks
-        if not hasattr(self, '_cached_type_ids_ref'):
-            type_ids = torch.cat([torch.ones(self.max_positions, device=device) * i for i in range(self.num_markers)]).long()
-            position_ids = torch.cat([torch.arange(self.max_positions, device=device) for _ in range(self.num_markers)]).long()
-            self._cached_type_ids_ref = weakref.ref(type_ids)
-            self._cached_position_ids_ref = weakref.ref(position_ids)
-            self._cached_ids_device = device
-        elif not hasattr(self, '_cached_ids_device') or self._cached_ids_device != device:
-            # Recreate on new device
-            type_ids = torch.cat([torch.ones(self.max_positions, device=device) * i for i in range(self.num_markers)]).long()
-            position_ids = torch.cat([torch.arange(self.max_positions, device=device) for _ in range(self.num_markers)]).long()
-            self._cached_type_ids_ref = weakref.ref(type_ids)
-            self._cached_position_ids_ref = weakref.ref(position_ids)
-            self._cached_ids_device = device
-        
-        # Get from weak references
-        type_ids = self._cached_type_ids_ref()
-        position_ids = self._cached_position_ids_ref()
-        
-        # Recreate if they were garbage collected
-        if type_ids is None or position_ids is None:
-            type_ids = torch.cat([torch.ones(self.max_positions, device=device) * i for i in range(self.num_markers)]).long()
-            position_ids = torch.cat([torch.arange(self.max_positions, device=device) for _ in range(self.num_markers)]).long()
-            self._cached_type_ids_ref = weakref.ref(type_ids)
-            self._cached_position_ids_ref = weakref.ref(position_ids)
-        
+    def _get_position_type_ids(self, device, channel_indices=None):
+        """Get position and type IDs for the token sequence.
+
+        Args:
+            device: torch device
+            channel_indices: Optional list of channel indices. If provided, creates IDs for only these channels.
+                           If None, creates IDs for all channels (legacy behavior).
+
+        Returns:
+            type_ids: Token type IDs indicating which channel each token belongs to
+            position_ids: Position IDs indicating spatial position within each channel
+        """
+        if channel_indices is None:
+            # Legacy behavior: use all channels with caching
+            # Use weak references for these cached tensors to prevent memory leaks
+            if not hasattr(self, '_cached_type_ids_ref'):
+                type_ids = torch.cat([torch.ones(self.max_positions, device=device) * i for i in range(self.num_markers)]).long()
+                position_ids = torch.cat([torch.arange(self.max_positions, device=device) for _ in range(self.num_markers)]).long()
+                self._cached_type_ids_ref = weakref.ref(type_ids)
+                self._cached_position_ids_ref = weakref.ref(position_ids)
+                self._cached_ids_device = device
+            elif not hasattr(self, '_cached_ids_device') or self._cached_ids_device != device:
+                # Recreate on new device
+                type_ids = torch.cat([torch.ones(self.max_positions, device=device) * i for i in range(self.num_markers)]).long()
+                position_ids = torch.cat([torch.arange(self.max_positions, device=device) for _ in range(self.num_markers)]).long()
+                self._cached_type_ids_ref = weakref.ref(type_ids)
+                self._cached_position_ids_ref = weakref.ref(position_ids)
+                self._cached_ids_device = device
+
+            # Get from weak references
+            type_ids = self._cached_type_ids_ref()
+            position_ids = self._cached_position_ids_ref()
+
+            # Recreate if they were garbage collected
+            if type_ids is None or position_ids is None:
+                type_ids = torch.cat([torch.ones(self.max_positions, device=device) * i for i in range(self.num_markers)]).long()
+                position_ids = torch.cat([torch.arange(self.max_positions, device=device) for _ in range(self.num_markers)]).long()
+                self._cached_type_ids_ref = weakref.ref(type_ids)
+                self._cached_position_ids_ref = weakref.ref(position_ids)
+        else:
+            # New behavior: create IDs for only the specified channels
+            # Type IDs use the actual channel indices
+            type_ids = torch.cat([torch.ones(self.max_positions, device=device) * ch_idx for ch_idx in channel_indices]).long()
+            # Position IDs cycle through 0-255 for each channel
+            position_ids = torch.cat([torch.arange(self.max_positions, device=device) for _ in channel_indices]).long()
+
         return type_ids, position_ids
         
     def clear_cache(self):
@@ -353,70 +419,90 @@ class Tokenized_MVTM(pl.LightningModule):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
     
-    def forward(self, token_ids, masked_ch_idx=None):
+    def forward(self, token_ids, masked_ch_idx=None, input_ch_idx=None, output_ch_idx=None):
         device = token_ids.device
-        
+
         # Use a context manager to automatically clean up tensors
         try:
-            input_ids, labels = self.mask_channels(token_ids.clone(), masked_ch_idx=masked_ch_idx)
-            type_ids, position_ids = self._get_position_type_ids(device)
-    
+            input_ids, labels, all_ch_idx = self.mask_channels(
+                token_ids.clone(),
+                masked_ch_idx=masked_ch_idx,
+                input_ch_idx=input_ch_idx,
+                output_ch_idx=output_ch_idx
+            )
+            type_ids, position_ids = self._get_position_type_ids(device, channel_indices=all_ch_idx)
+
             # Regular forward pass without label smoothing
             out = self.mvtm(
-                input_ids=input_ids, 
-                token_type_ids=type_ids, 
-                position_ids=position_ids, 
+                input_ids=input_ids,
+                token_type_ids=type_ids,
+                position_ids=position_ids,
                 labels=labels
             )
-            
+
             return out, token_ids, labels
         except Exception as e:
             # Clean cache on error to prevent memory leaks
             self.clear_cache()
             raise e
     
-    def predict(self, token_ids, masked_ch_idx=None, T=10, temp=1.0, schedule='cosine', output_attentions=False, output_hidden_states=False):
+    def predict(self, token_ids, masked_ch_idx=None, input_ch_idx=None, output_ch_idx=None, T=10, temp=1.0, schedule='cosine', output_attentions=False, output_hidden_states=False, return_logits=False):
         batch_size = token_ids.shape[0]
         device = token_ids.device
-        
+
         try:
-            if masked_ch_idx is None:
+            if masked_ch_idx is None and input_ch_idx is None:
                 input_ids = token_ids.clone()
                 labels = torch.ones(input_ids.shape, device=device) * -100
+                all_ch_idx = None
             else:
-                input_ids, labels = self.mask_channels(token_ids.clone(), masked_ch_idx=masked_ch_idx)
-            
-            type_ids, position_ids = self._get_position_type_ids(device)
-            
-            if masked_ch_idx is None:
-                unmask_schedule = [1]
+                input_ids, labels, all_ch_idx = self.mask_channels(
+                    token_ids.clone(),
+                    masked_ch_idx=masked_ch_idx,
+                    input_ch_idx=input_ch_idx,
+                    output_ch_idx=output_ch_idx
+                )
+
+            type_ids, position_ids = self._get_position_type_ids(device, channel_indices=all_ch_idx)
+
+            # Determine unmask schedule based on which parameters were provided
+            if input_ch_idx is not None and output_ch_idx is not None:
+                # New interface: unmask based on output channels
+                num_masked_tokens = self.max_positions * len(output_ch_idx)
+            elif masked_ch_idx is not None:
+                # Legacy interface: unmask based on masked channels
+                num_masked_tokens = self.max_positions * len(masked_ch_idx)
             else:
-                unmask_schedule = get_unmask_schedule(self.max_positions * len(masked_ch_idx), T, schedule=schedule)
-            
+                # No masking
+                num_masked_tokens = 1
+
+            unmask_schedule = get_unmask_schedule(num_masked_tokens, T, schedule=schedule)
+
             for k in unmask_schedule:
                 if k == 0: continue
-                
+
                 # Free memory before each forward pass
                 if device.type == 'cuda':
                     torch.cuda.empty_cache()
-                
+
                 out = self.mvtm(
-                    input_ids=input_ids, 
-                    token_type_ids=type_ids, 
-                    position_ids=position_ids, 
-                    labels=labels, 
-                    output_attentions=output_attentions, 
+                    input_ids=input_ids,
+                    token_type_ids=type_ids,
+                    position_ids=position_ids,
+                    labels=labels,
+                    output_attentions=output_attentions,
                     output_hidden_states=output_hidden_states
                 )
-                
-                print(out['loss'])
+
                 if (labels == -100).all(): break
-                
+
                 input_ids, labels = self.unmask(input_ids, labels, out['logits'], batch_size, k, temp=temp)
-                
-                
-            return out, input_ids, labels
-            
+
+
+            if return_logits:
+                return out, input_ids, labels, out['logits']
+            return out, input_ids, labels, None
+
         except Exception as e:
             # Clean cache on error
             self.clear_cache()

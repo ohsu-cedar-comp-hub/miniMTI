@@ -1,0 +1,30 @@
+{
+    "model_id":"hhdnp2ma",
+    "ckpt_path": "PLEASE_SET_TO_YOUR_CHECKPOINT_DIRECTORY",
+    "huggingface_repo": "changlab/cycif-panel-reduction",
+    "model":{
+        "num_markers":18,
+        "num_layers":24,
+        "num_heads":16,
+        "latent_dim":1024,
+        "num_codes":256,
+        "vq_dim":4
+    },
+    "tokenizer":{
+        "vq_dim":4,
+        "vq_f_dim":256,
+        "num_if_channels":17,
+        "num_codes":256,
+        "if_config_path":"PLEASE_SET_TO_IF_VQGAN_CONFIG_YAML",
+        "if_ckpt_path":"PLEASE_SET_TO_IF_VQGAN_CHECKPOINT",
+        "he_config_path":"PLEASE_SET_TO_HE_VQGAN_CONFIG_YAML",
+        "he_ckpt_path":"PLEASE_SET_TO_HE_VQGAN_CHECKPOINT"
+    },
+    "data":{
+        "downscale":false,
+        "remove_he":false,
+        "deconvolve_he":false,
+        "rescale":true,
+        "remove_background":false
+    }
+}

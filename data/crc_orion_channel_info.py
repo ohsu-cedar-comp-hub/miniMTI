@@ -24,7 +24,8 @@ def get_channel_info():
     keep_channels = [ch for ch in channels if ch != "AF1" and ch != 'Argo550']
     keep_channels_idx = [i for i,ch in enumerate(channels) if ch in keep_channels]
     ch2idx = {ch:i for i,ch in enumerate(keep_channels)}
-    ch2idx['HE'] = 17
-    #ch2idx['HE2'] = 18
+    #ch2idx['hematoxylin'] = 17
+    #ch2idx['eosin'] = 18
+    ch2idx['H&E'] = 17
 
     return keep_channels, keep_channels_idx, ch2idx

@@ -70,15 +70,21 @@ def get_n_random_points_in_clusters(data, kmeans, n_samples=5):
 
 def create_panel_selection_data(fpath1, fpath2, savename, n_clusters=15, n_closest=100):
     f1 = h5py.File(fpath1)
-    f2 = h5py.File(fpath2)
-    
     mints1 = get_mints(f1)
-    mints2 = get_mints(f2)
     
-    mints = np.concatenate([mints1, mints2], axis=0)
-    meta = np.concatenate([f1['metadata'][:], f2['metadata'][:]])
-    ims = np.concatenate([f1['images'][:], f2['images'][:]], axis=0)
-    masks = np.concatenate([f1['masks'][:], f2['masks'][:]], axis=0)
+    if fpath2 is not None:
+        f2 = h5py.File(fpath2)
+        mints2 = get_mints(f2)  
+        mints = np.concatenate([mints1, mints2], axis=0)
+        meta = np.concatenate([f1['metadata'][:], f2['metadata'][:]])
+        ims = np.concatenate([f1['images'][:], f2['images'][:]], axis=0)
+        masks = np.concatenate([f1['masks'][:], f2['masks'][:]], axis=0)
+    else:
+        mints = mints1
+        meta = f1['metadata'][:]
+        ims = f1['images'][:]
+        masks = f1['masks'][:]  
+        
     
     
     kmeans = KMeans(n_clusters=n_clusters,max_iter=100000).fit(mints)
@@ -98,15 +104,16 @@ def create_panel_selection_data(fpath1, fpath2, savename, n_clusters=15, n_close
 
 
 if __name__ == '__main__':
-    savename = 'lunaphore_panel_select_data'
+    #savename = 'lunaphore_panel_select_data'
     #fpath1 = '/home/groups/ChangLab/dataset/lunaphore-immune-unnorm/lunaphore_dataset_norm_sid=1010332.h5'
     #fpath2 = '/home/groups/ChangLab/dataset/lunaphore-immune-unnorm/lunaphore_dataset_norm_sid=1010173.h5'
-    fpath1 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010240.h5'
-    fpath2 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010296.h5'
-    fpath3 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010323.h5'
+    #fpath1 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010240.h5'
+    #fpath2 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010296.h5'
+    #fpath3 = '/arc/scratch1/ChangLab/lunaphore-immune-unnorm/lunaphore_dataset_unnorm_sid=1010323.h5'
     
-    #savename = 'orion_panel_select_data'
-    #fpath1 = '/mnt/scratch/ORION-CRC-Unnormalized-fixed-HE/orion_crc_dataset_sid=CRC02.h5'
-    #fpath2 = '/mnt/scratch/ORION-CRC-Unnormalized-fixed-HE/orion_crc_dataset_sid=CRC03.h5'
+    savename = 'orion_panel_select_data_CRC02_CRC03'
+    fpath1 = '/home/exacloud/gscratch/ChangLab/ORION-CRC-Unnormalized-All/orion_crc_dataset_sid=CRC02.h5'
+    fpath2 = '/home/exacloud/gscratch/ChangLab/ORION-CRC-Unnormalized-All/orion_crc_dataset_sid=CRC03.h5'
+    
     
     create_panel_selection_data(fpath1, fpath2, savename)

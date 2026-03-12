@@ -1,3 +1,62 @@
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-__pycache__
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Claude
+**/.claude/settings.local.json
+
+# Data files
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.csv
+*.tiff
+*.tif
+*.png
+*.jpg
+*.jpeg
+*.ome.tif
+*.ome.tiff
+
+# Model checkpoints
+*.ckpt
+*.pt
+*.pth
+
+# Logs and outputs
+*.err
+*.out
+*.log
+wandb/
+
+# Node
+package.json
+package-lock.json
+node_modules/
+
+# One-off scripts and artifacts at root level
+registration_checks/
+missing_samples_for_sift.txt
+still_needs_registration.txt
+MISSING_SIFT_REGISTRATION_SUMMARY.md
+
+# Config exceptions
+!eval/configs/*.json
+
+# VQGAN config exceptions
+!*.yaml

@@ -1,0 +1,31 @@
+[project]
+name = "cycif-panel-reduction"
+version = "0.1.0"
+description = "CycIF panel reduction using masked token modeling"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+readme = "README.md"
+dependencies = [
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "pytorch-lightning>=2.0",
+    "transformers>=4.30",
+    "einops>=0.6",
+    "omegaconf>=2.2",
+    "h5py>=3.7",
+    "numpy>=1.21",
+    "pandas>=1.4",
+    "scikit-image>=0.19",
+    "scikit-learn>=1.0",
+    "scipy>=1.9",
+    "matplotlib>=3.5",
+    "seaborn>=0.12",
+    "tqdm>=4.64",
+    "torchmetrics>=0.11",
+    "wandb>=0.13",
+    "huggingface-hub>=0.14",
+    "taming-transformers @ git+https://github.com/CompVis/taming-transformers.git",
+]
+
+[tool.uv]
+extra-index-url = ["https://download.pytorch.org/whl/cu118"]

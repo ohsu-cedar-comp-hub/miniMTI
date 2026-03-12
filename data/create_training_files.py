@@ -44,7 +44,7 @@ if __name__ == '__main__':
     train_files, val_files = [],[]
     for h5file in os.listdir(args.data_dir):
         if not h5file.endswith('h5'): continue
-        if all([s not in h5file for s in val_samples]) and 'train' not in h5file:
+        if all([s not in h5file for s in val_samples]) and ('train' not in h5file) and ('panel_select' not in h5file) and ('val' not in h5file):
             if args.train_samples is not None:
                 if any([s in h5file for s in train_samples]):
                     train_files.append(h5py.File(f"{args.data_dir}/{h5file}", "r"))
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     train_layouts = create_virtual_layout(train_files)
     val_layouts = create_virtual_layout(val_files)
     
-    create_file(f'{args.data_dir}/train-{args.batch_name}-out.h5', *train_layouts)
+    create_file(f'{args.data_dir}/train-{args.batch_name}.h5', *train_layouts)
     create_file(f'{args.data_dir}/val-{args.batch_name}.h5', *val_layouts)
             
     

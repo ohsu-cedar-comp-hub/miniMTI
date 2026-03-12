@@ -1,38 +1,209 @@
-# Basic Workflow
+# CycIF Panel Reduction with Masked Token Modeling
 
+Predicting missing immunofluorescence (IF) markers from reduced antibody panels using masked token modeling (MVTM).
 
-## Data Preprocessing
-Each dataset will have its own preprocessing script:
-  - `python process_biolib_immune.py`
-  - `python process_aced_immune.py`
-  - `python process_crc_orion.py`
-    
-These scripts will generate a series of HDF5 files, one for each sample, with three datasets in each: `images`, `masks`, and `metadata`. Each dataset is described in detail below:
-  - `images`: dataset containing all 8 bit images centered around a single cell with shape=(N, H, W, C)
-     - NOTE: the number of channels per image (`C`) is equal to the number of biomarker channels in the IF image plus 3, because the H&E images (RGB) are concatenated to the end of each IF image.
-  - `masks`: dataset containing the binary masks for the cell at the center of each image with shape=(N, H, W)
-  - `metadata`: dataset containing a list of strings that include the cell ID and (x,y) coordinates for the centroid of the cell at the center of each image with shape=(N,). Each string is formatted like so: `"<sample-name>-CellID-<Cell-ID>-x=<x-coordinate>-y=<y-coordinate>"`
+## Overview
 
-For training, these HDF5 datasets must be combined so that batches are constructed using cells selected from each sample. To create a set of unified training and validation files, use the script `data/create_training_files.py` like so: 
-`python create_training_file.py --data_dir </path/to/directory/containing/HDF5/files> --val_samples </path/to/text/file/listing/validation/samples.txt> --batch-name <name_for_validation_batch>` 
-details for the input parameters are below:
-  - `data-dir`: This should be a path to a directory containing the HDF5 files, one per sample
-  - `val-samples`: You will need to create a .txt file that has one sample name per row that will be in the validation set. Every file not named in this file will be included in the training set.
-     - IMPORTANT: The sample names in this file must also be present in the filename of the HDF5 file for that sample. e.g. `"CRC01"` is the sample name for the file `"orion_crc_dataset_sid=CRC01.h5"`
-  - `batch-name`: This should be a string used as an identifier for which files are included in the validation set. It will be used to name the train and validation file like so: `"train-<batch-name>-out.h5"` `"val-<batch-name>.h5"` 
-  
-## Training
-- `training/MVTM/run_training-mvtm.py` will handle model training for the VQ+LM model, and `training/run_training.py` will handle the vanilla MAE model.
+This repository contains the code for our Nature Methods paper on CycIF panel reduction. The method works by:
 
-## Marker Panel Selection
-- Prior to panel selection, a representative dataset that contains a balanced set of cells with different marker expressions must be produced from the original training set.
-- Next, iterative panel selection can be done to determine the best marker order:
-  - `python run_panel_selection.py --ckpt </path/to/model/checkpoint> --val_dataset </path/to/panel/selection/dataset> --val_dataset_size <NUM_CELLS> --max_panel_size <MAX_NUM_MARKERS> --gpu_id <GPU_ID> --batch_size <BATCH_SIZE> --params_file </path/to/params/file>`
+1. **Tokenization**: Single-cell images (32x32 patches centered on segmented cells) are tokenized into discrete codes using VQGAN tokenizers — one for IF channels and one for H&E
+2. **Masked Token Modeling**: A RoBERTa-based masked language model learns to predict masked channel tokens from visible channels, treating each marker as a "sentence" of 16 tokens
+3. **Panel Selection**: An iterative greedy algorithm identifies which markers are most informative for predicting the rest, enabling rational panel reduction
 
-## Model Evaluation
-- Then the script `eval/generate_ftable_from_h5.py` can be used to generate a dataframe containing real and predicted mean intensities for the chosen imputed marker set, along with the X,Y coordinates for each cell (TODO: setup CLI)
-- Then you can use the functions in `eval/plotting` generate plots. You can also generate embedding plots: `eval/embedding_eval.py`
-  - currenly no CLI setup for these two scripts, so you must change the variables in the script  
-  
+The model is trained on the CRC-Orion dataset (colorectal cancer tissue microarrays) with 17 IF markers + co-registered H&E.
+
+## Installation
+
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and install
+git clone https://github.com/ChangLab/cycif-panel-reduction.git
+cd cycif-panel-reduction
+uv sync
+```
+
+Alternatively, install dependencies manually:
+
+```bash
+pip install torch torchvision pytorch-lightning transformers einops omegaconf \
+    h5py numpy pandas scikit-image scikit-learn scipy matplotlib seaborn \
+    tqdm torchmetrics wandb huggingface-hub
+pip install git+https://github.com/CompVis/taming-transformers.git
+```
+
+## Quick Start
+
+### Download pre-trained model and run inference
+
+```python
+from eval.load_model import load_model_from_huggingface
+
+# Downloads model weights from HuggingFace Hub (cached locally)
+model, tokenizer = load_model_from_huggingface()
+```
+
+### Run the example inference script
+
+```bash
+python scripts/inference_example.py \
+    --val-file /path/to/sample.h5 \
+    --input-channels 17,6,11,13 \
+    --dataset-size 10000
+```
+
+This will:
+- Load the pre-trained model from HuggingFace
+- Run inference with H&E + CD8a + PD-L1 + CD163 as input
+- Print Spearman correlations for each predicted marker
+- Save a CSV with real vs. predicted mean intensities
+
+## Data Format
+
+Input data is stored in HDF5 files with the following structure:
+
+| Dataset    | Shape           | Type    | Description |
+|------------|-----------------|---------|-------------|
+| `images`   | (N, 32, 32, 20) | uint8   | 17 IF channels + 3 H&E (RGB) channels |
+| `masks`    | (N, 32, 32)     | bool    | Binary cell segmentation masks |
+| `metadata` | (N,)            | string  | Cell IDs and coordinates: `<sample>-CellID-<id>-x=<x>-y=<y>` |
+
+### CRC-Orion channel ordering (18 markers)
+
+| Index | Marker      | Index | Marker      |
+|-------|-------------|-------|-------------|
+| 0     | DAPI        | 9     | CD45RO      |
+| 1     | CD31        | 10    | CD20        |
+| 2     | CD45        | 11    | PD-L1       |
+| 3     | CD68        | 12    | CD3e        |
+| 4     | CD4         | 13    | CD163       |
+| 5     | FOXP3       | 14    | E-cadherin  |
+| 6     | CD8a        | 15    | PD-1        |
+| 7     | CD45RO      | 16    | Ki67        |
+| 8     | CD20        | 17    | H&E (RGB)   |
+
+Note: DAPI (index 0) and PanCK/aSMA are included in the IF channels. H&E is treated as a single multi-channel token.
+
+## Full Pipeline
+
+### 1. Data Preprocessing
+
+Convert raw whole-slide images into single-cell HDF5 patches:
+
+```bash
+python data/process_orion_crc.py \
+    --data-dir /path/to/Orion_CRC/ \
+    --mask-dir /path/to/mesmer_masks/ \
+    --save-dir /path/to/output/ \
+    --sample-ids 01 02 03 04 05
+```
+
+### 2. Create Training Files
+
+Merge individual sample HDF5 files into combined training/validation sets:
+
+```bash
+python data/create_training_files.py \
+    --data-dir /path/to/h5_files/ \
+    --val-samples data/val_samples_crc_orion.txt \
+    --batch-name CRC05-06
+```
+
+### 3. Pre-tokenization
+
+Convert image data into discrete tokens for efficient training:
+
+```bash
+python training/MVTM/pretokenize_data.py \
+    --config-path-if /path/to/if_config.yaml \
+    --ckpt-path-if /path/to/if_model.ckpt \
+    --config-path-he /path/to/he_config.yaml \
+    --ckpt-path-he /path/to/he_model.ckpt \
+    --train-file /path/to/train.h5 \
+    --val-file /path/to/val.h5 \
+    --output-dir /path/to/tokenized/ \
+    --num-channels 20
+```
+
+### 4. Training
+
+Train the masked token model on pre-tokenized data:
+
+```bash
+python training/MVTM/run_training_tokenized.py \
+    --train-file /path/to/tokenized/train_tokenized.h5 \
+    --num-gpus 4 \
+    --batch-size 16 \
+    --num-epochs 10
+```
+
+### 5. Panel Selection
+
+Run iterative panel selection to find the optimal marker ordering:
+
+```bash
+python eval/run_panel_selection_tokenized.py \
+    --val-dataset /path/to/panel_selection_data.h5 \
+    --val-dataset-size 5000 \
+    --param-file eval/configs/params_mvtm-256-he-rgb-tokenized.json \
+    --max-panel-size 18 \
+    --gpu-id 0 \
+    --batch-size 64
+```
+
+### 6. Evaluation
+
+Generate feature tables with real and predicted mean intensities:
+
+```bash
+python eval/generate_ftable_from_h5_tokenized.py 10 \
+    --val-file /path/to/CRC10.h5 \
+    --config eval/configs/params_mvtm-256-he-rgb-tokenized.json \
+    --input-channels 17,6,11,13
+```
+
+### 7. PLL Scoring
+
+Calculate pseudo-log-likelihood scores for predicted channels:
+
+```bash
+python eval/calculate_pll_from_tokens.py 10 17,6,11,13 5 /path/to/token_ids.npy \
+    --val-file /path/to/CRC10.h5 \
+    --config eval/configs/params_mvtm-256-he-rgb-tokenized.json
+```
+
+## Pre-trained Models
+
+Pre-trained model weights are hosted on HuggingFace:
+- **Model**: [changlab/cycif-panel-reduction](https://huggingface.co/changlab/cycif-panel-reduction)
+- **Example data**: [changlab/cycif-panel-reduction-example](https://huggingface.co/datasets/changlab/cycif-panel-reduction-example)
+
+### Architecture
+
+| Component | Details |
+|-----------|---------|
+| Backbone  | RoBERTa (24 layers, 16 heads, dim=1024) |
+| IF Tokenizer | VQGAN (codebook=256, latent=4x4) |
+| H&E Tokenizer | VQGAN (codebook=256, latent=4x4) |
+| Sequence length | 18 channels x 16 tokens = 288 tokens |
+| Training | Masked token prediction with cosine masking schedule |
+
+## Citation
+
+```bibtex
+@article{simsz2026cycif,
+  title={CycIF Panel Reduction with Masked Token Modeling},
+  author={...},
+  journal={Nature Methods},
+  year={2026}
+}
+```
+
+## License
+
+This project is licensed under the Apache License 2.0 — see [LICENSE](LICENSE) for details.
+
 ## Acknowledgements
+
 This work was supported by grants from the National Institutes of Health (NIH), the Chan Zuckerberg Initiative (CZI), and the Stanford Data Science Initiative. We thank the members of the Chang Lab for their feedback and assistance throughout the development of this project.
