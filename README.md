@@ -52,37 +52,48 @@ Pre-trained VQGAN checkpoints (IF and H&E tokenizers) are available on HuggingFa
 
 ## Quick Start
 
-### Download pre-trained model and example data
-
 ```python
-from eval.load_model import load_model_from_huggingface
+import torch
+import h5py
 from huggingface_hub import hf_hub_download
+from eval.load_model import load_model_from_huggingface
+from data.data import SingleCellDataset
 
-# Download model weights (~5.3 GB, requires access approval)
-model, tokenizer, config = load_model_from_huggingface()
+# 1. Load pre-trained model and tokenizer from HuggingFace
+(model, tokenizer), config = load_model_from_huggingface()
+device = next(model.parameters()).device
 
-# Download example data (~178 MB, no approval needed)
-example_h5 = hf_hub_download(
-    "changlab/miniMTI-CRC-example",
-    "example_CRC04_10k.h5",
-    repo_type="dataset",
+# 2. Download example data (10k cells from CRC-Orion)
+h5_path = hf_hub_download(
+    "changlab/miniMTI-CRC-example", "example_CRC04_10k.h5", repo_type="dataset"
 )
+
+# 3. Load single-cell images from HDF5
+with h5py.File(h5_path, "r") as f:
+    dataset = SingleCellDataset(
+        f["images"][:100], f["masks"][:100], f["metadata"][:100],
+        remove_he=False, rescale=True, deconvolve_he=False,
+    )
+images = torch.stack([dataset[i][0] for i in range(len(dataset))]).to(device)
+
+# 4. Define input panel: H&E + CD8a + PD-L1 + CD163
+input_channels = [17, 6, 11, 13]
+masked_channels = [i for i in range(18) if i not in input_channels]
+
+# 5. Tokenize, predict masked channels, and detokenize
+with torch.no_grad():
+    token_ids = tokenizer.tokenize(images)
+    out, token_ids, labels, _ = model.predict(
+        token_ids, masked_ch_idx=masked_channels, T=1, temp=0
+    )
+    predicted_images = tokenizer.detokenize(token_ids).reshape(images.shape)
+
+# predicted_images now contains the full 18-channel panel
+# Channels in input_channels are copied from the input;
+# all other channels are predicted by the model
 ```
 
-### Run the example inference script
-
-```bash
-python scripts/inference_example.py \
-    --val-file /path/to/sample.h5 \
-    --input-channels 17,6,11,13 \
-    --dataset-size 10000
-```
-
-This will:
-- Load the pre-trained model from HuggingFace
-- Run inference with H&E + CD8a + PD-L1 + CD163 as input
-- Print Spearman correlations for each predicted marker
-- Save a CSV with real vs. predicted mean intensities
+For a more complete example with evaluation metrics, see `scripts/inference_example.py`.
 
 ## Data Format
 
