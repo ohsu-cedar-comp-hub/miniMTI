@@ -16,7 +16,7 @@ miniMTI learns from paired same-section H&E-MTI data using a unified multimodal 
 2. **Masked Token Modeling**: A RoBERTa-based masked language model learns to predict masked channel tokens from visible channels, treating each marker as a "sentence" of 16 tokens
 3. **Panel Selection**: An iterative greedy algorithm identifies which markers are most informative for predicting the rest, enabling rational panel reduction
 
-The model is trained on the CRC-Orion dataset (colorectal cancer tissue microarrays) with 17 IF markers + co-registered H&E.
+The model is trained on the CRC-Orion dataset (colorectal cancer tissue whole slide images captured on the RareCyte Orion platform) with 17 IF markers + co-registered H&E.
 
 ## Installation
 
@@ -150,7 +150,7 @@ Input data is stored in HDF5 files with the following structure:
 | `masks`    | (N, 32, 32)     | bool    | Binary cell segmentation masks |
 | `metadata` | (N,)            | string  | Cell IDs and coordinates: `<sample>-CellID-<id>-x=<x>-y=<y>` |
 
-### CRC-Orion channel ordering (18 tokens)
+### CRC-Orion channel ordering (18 markers)
 
 | Index | Marker      | Index | Marker      |
 |-------|-------------|-------|-------------|
@@ -164,7 +164,7 @@ Input data is stored in HDF5 files with the following structure:
 | 7     | CD45RO      | 16    | aSMA        |
 | 8     | CD20        | 17    | H&E (RGB)   |
 
-Each IF marker (indices 0–16) is encoded as a single-channel VQGAN token. H&E (index 17) is encoded as a 3-channel RGB VQGAN token.
+Each IF marker (indices 0–16) is encoded as a single-channel by the VQGAN into 16 tokens. H&E (index 17) is encoded as a 3-channel RGB image into 16 tokens.
 
 ## Full Pipeline
 
