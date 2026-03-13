@@ -16,7 +16,7 @@ miniMTI learns from paired same-section H&E-MTI data using a unified multimodal 
 2. **Masked Token Modeling**: A RoBERTa-based masked language model learns to predict masked channel tokens from visible channels, treating each marker as a "sentence" of 16 tokens
 3. **Panel Selection**: An iterative greedy algorithm identifies which markers are most informative for predicting the rest, enabling rational panel reduction
 
-The model is trained on the CRC-Orion dataset (colorectal cancer tissue microarrays) with 17 IF markers + co-registered H&E.
+The model is trained on the CRC-Orion dataset (colorectal cancer tissue whole slide images) with 17 IF markers + co-registered H&E.
 
 ## Installation
 
@@ -99,7 +99,7 @@ For a more complete example with evaluation metrics, see `scripts/inference_exam
 
 Running the Quick Start snippet on 100 cells from the example dataset with input panel H&E + CD8a + PD-L1 + CD163 produces the following Spearman correlations between real and predicted mean marker intensities:
 
-| Predicted marker | Spearman *r* | | Predicted marker | Spearman *r* |
+| Predicted marker | Spearman *r* | | Predicted marker | Spearman *ρ* |
 |------------------|-------------:|-|------------------|-------------:|
 | DAPI             |       0.8524 | | CD3e             |       0.9470 |
 | CD31             |       0.8051 | | E-cadherin       |       0.9410 |
@@ -111,7 +111,7 @@ Running the Quick Start snippet on 100 cells from the example dataset with input
 | CD20             |       0.6621 | |                  |              |
 | PD-L1            |       0.5180 | |                  |              |
 
-Note: Correlations improve with larger evaluation sets (mean *r* = 0.80 at 10,000 cells). Results on 100 cells show higher variance due to the small sample size.
+Note: Correlations improve with larger evaluation sets (mean *ρ* = 0.80 at 10,000 cells). Results on 100 cells show higher variance due to the small sample size.
 
 ### Typical install time
 
@@ -164,7 +164,7 @@ Input data is stored in HDF5 files with the following structure:
 | 7     | CD45RO      | 16    | aSMA        |
 | 8     | CD20        | 17    | H&E (RGB)   |
 
-Each IF marker (indices 0–16) is encoded as a single-channel VQGAN token. H&E (index 17) is encoded as a 3-channel RGB VQGAN token.
+Each IF marker (indices 0–16) is encoded as a single-channel image by the VQGAN into 16 tokens. H&E (index 17) is encoded as a 3-channel RGB image into 16 tokens.
 
 ## Full Pipeline
 
@@ -326,7 +326,7 @@ example_h5 = hf_hub_download(
 | Backbone  | RoBERTa (24 layers, 16 heads, dim=1024) |
 | IF Tokenizer | VQGAN (codebook=256, latent=4x4) |
 | H&E Tokenizer | VQGAN (codebook=256, latent=4x4) |
-| Sequence length | 18 channels x 16 tokens = 288 tokens |
+| Sequence length | 18 markers x 16 tokens = 288 tokens |
 | Training | Masked token prediction with cosine masking schedule |
 
 ## Citation
