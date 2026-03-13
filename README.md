@@ -2,7 +2,7 @@
 
 **miniMTI** is a molecularly anchored virtual staining framework that determines the minimal set of experimentally measured markers required, alongside H&E, to accurately reconstruct large multiplex tissue imaging (MTI) panels while preserving biologically and clinically relevant information.
 
-[[Paper]](https://www.biorxiv.org/content/10.64898/2026.01.21.700911v1) [[Model]](https://huggingface.co/changlab/cycif-panel-reduction)
+[[Paper]](https://www.biorxiv.org/content/10.64898/2026.01.21.700911v1) [[Model]](https://huggingface.co/changlab/miniMTI-CRC)
 
 ## Overview
 
@@ -189,8 +189,8 @@ python eval/calculate_pll_from_tokens.py 10 17,6,11,13 5 /path/to/token_ids.npy 
 ## Pre-trained Models
 
 Pre-trained model weights are hosted on HuggingFace:
-- **Model**: [changlab/cycif-panel-reduction](https://huggingface.co/changlab/cycif-panel-reduction)
-- **Example data**: [changlab/cycif-panel-reduction-example](https://huggingface.co/datasets/changlab/cycif-panel-reduction-example)
+- **Model**: [changlab/miniMTI-CRC](https://huggingface.co/changlab/miniMTI-CRC)
+- **Example data**: [changlab/miniMTI-CRC-example](https://huggingface.co/datasets/changlab/miniMTI-CRC-example)
 
 ### Architecture
 

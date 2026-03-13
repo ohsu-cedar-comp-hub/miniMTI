@@ -1,33 +1,42 @@
 """
-One-time script to upload model weights and tokenizer to HuggingFace Hub.
+Upload miniMTI model weights and VQGAN tokenizer to HuggingFace Hub.
 
 Usage:
-    python scripts/upload_to_huggingface.py \
-        --mvtm-ckpt /path/to/mvtm_model.ckpt \
-        --if-config /path/to/if_config.yaml \
-        --if-ckpt /path/to/if_model.ckpt \
-        --he-config /path/to/he_config.yaml \
-        --he-ckpt /path/to/he_model.ckpt \
-        --repo-id changlab/cycif-panel-reduction
+    huggingface-cli login
+    python scripts/upload_to_huggingface.py --repo-id changlab/miniMTI-CRC
+
+By default, uses the checkpoint paths on the OHSU cluster. Override with
+--mvtm-ckpt, --if-config, --if-ckpt, --he-config, --he-ckpt flags.
 
 Requires: pip install huggingface_hub
-You must be logged in: huggingface-cli login
 """
 import os
 import json
 import argparse
 from huggingface_hub import HfApi, create_repo
 
+# Default source paths (OHSU cluster)
+DEFAULT_MVTM_CKPT = "/home/groups/ChangLab/simsz/cycif-panel-reduction/training/MVTM/MVTM-panel-reduction-tokenized/hhdnp2ma/checkpoints/epoch=1-step=343000.ckpt"
+DEFAULT_IF_CONFIG = "/home/groups/ChangLab/govindsa/Panel_Reduction_Project/taming-transformers/configs/custom_vqgan_if_only_256.yaml"
+DEFAULT_IF_CKPT = "/home/groups/ChangLab/govindsa/Panel_Reduction_Project/taming-transformers/vqgan_checkpoints_opt/if_only_he_rgb_vqgan_models/if_only_256_ckpts/last.ckpt"
+DEFAULT_HE_CONFIG = "/home/groups/ChangLab/govindsa/Panel_Reduction_Project/taming-transformers/configs/custom_vqgan_he_rgb_256.yaml"
+DEFAULT_HE_CKPT = "/home/groups/ChangLab/govindsa/Panel_Reduction_Project/taming-transformers/vqgan_checkpoints_opt/if_only_he_rgb_vqgan_models/he_rgb_256_ckpts/last.ckpt"
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Upload model weights to HuggingFace Hub')
-    parser.add_argument('--mvtm-ckpt', type=str, required=True, help='Path to MVTM model checkpoint')
-    parser.add_argument('--if-config', type=str, required=True, help='Path to IF VQGAN config YAML')
-    parser.add_argument('--if-ckpt', type=str, required=True, help='Path to IF VQGAN checkpoint')
-    parser.add_argument('--he-config', type=str, required=True, help='Path to H&E VQGAN config YAML')
-    parser.add_argument('--he-ckpt', type=str, required=True, help='Path to H&E VQGAN checkpoint')
-    parser.add_argument('--repo-id', type=str, default='changlab/cycif-panel-reduction',
-                        help='HuggingFace repo ID (default: changlab/cycif-panel-reduction)')
+    parser = argparse.ArgumentParser(description='Upload miniMTI weights to HuggingFace Hub')
+    parser.add_argument('--mvtm-ckpt', type=str, default=DEFAULT_MVTM_CKPT,
+                        help='Path to MVTM model checkpoint')
+    parser.add_argument('--if-config', type=str, default=DEFAULT_IF_CONFIG,
+                        help='Path to IF VQGAN config YAML')
+    parser.add_argument('--if-ckpt', type=str, default=DEFAULT_IF_CKPT,
+                        help='Path to IF VQGAN checkpoint')
+    parser.add_argument('--he-config', type=str, default=DEFAULT_HE_CONFIG,
+                        help='Path to H&E VQGAN config YAML')
+    parser.add_argument('--he-ckpt', type=str, default=DEFAULT_HE_CKPT,
+                        help='Path to H&E VQGAN checkpoint')
+    parser.add_argument('--repo-id', type=str, default='changlab/miniMTI-CRC',
+                        help='HuggingFace repo ID')
     parser.add_argument('--private', action='store_true', help='Make the repository private')
     args = parser.parse_args()
 
@@ -40,8 +49,24 @@ def main():
     except Exception as e:
         print(f"Note: {e}")
 
-    # Model architecture config
+    # Verify all source files exist
+    uploads = [
+        (args.mvtm_ckpt, "mvtm_model.ckpt"),
+        (args.if_config, "tokenizer/if_config.yaml"),
+        (args.if_ckpt, "tokenizer/if_model.ckpt"),
+        (args.he_config, "tokenizer/he_config.yaml"),
+        (args.he_ckpt, "tokenizer/he_model.ckpt"),
+    ]
+
+    for src, dst in uploads:
+        if not os.path.exists(src):
+            raise FileNotFoundError(f"Source file not found: {src}")
+        size_mb = os.path.getsize(src) / (1024 * 1024)
+        print(f"  {dst}: {size_mb:.1f} MB <- {src}")
+
+    # Model config
     config = {
+        "model_id": "hhdnp2ma",
         "model": {
             "num_markers": 18,
             "num_layers": 24,
@@ -74,59 +99,50 @@ def main():
         ]
     }
 
-    # Save config locally then upload
-    config_path = "/tmp/config.json"
+    config_path = "/tmp/minimti_config.json"
     with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
 
-    # Upload files
-    uploads = [
-        (args.mvtm_ckpt, "mvtm_model.ckpt"),
-        (args.if_config, "tokenizer/if_config.yaml"),
-        (args.if_ckpt, "tokenizer/if_model.ckpt"),
-        (args.he_config, "tokenizer/he_config.yaml"),
-        (args.he_ckpt, "tokenizer/he_model.ckpt"),
-        (config_path, "config.json"),
-    ]
-
-    for local_path, repo_path in uploads:
-        print(f"Uploading {local_path} -> {repo_path}...")
-        api.upload_file(
-            path_or_fileobj=local_path,
-            path_in_repo=repo_path,
-            repo_id=args.repo_id,
-            repo_type="model",
-        )
-        print(f"  Done.")
-
-    # Upload model card
+    # Model card
     model_card = """---
-license: apache-2.0
+license: other
+license_name: ohsu-non-commercial
+license_link: https://github.com/ohsu-cedar-comp-hub/cycif-panel-reduction/blob/publication/LICENSE
 tags:
   - biology
-  - microscopy
+  - multiplex-imaging
+  - virtual-staining
+  - computational-pathology
   - cycif
-  - panel-reduction
-  - masked-language-model
 ---
 
-# CycIF Panel Reduction with Masked Token Modeling (MVTM)
+# miniMTI: minimal multiplex tissue imaging
 
-Pre-trained model for predicting missing immunofluorescence (IF) markers from
-reduced antibody panels and co-registered H&E images.
+Pre-trained model weights for **miniMTI**, a molecularly anchored virtual staining
+framework that determines the minimal set of experimentally measured markers required,
+alongside H&E, to accurately reconstruct large multiplex tissue imaging (MTI) panels.
 
-## Model Description
+**Paper:** [bioRxiv 2026.01.21.700911](https://www.biorxiv.org/content/10.64898/2026.01.21.700911v1)
+**Code:** [GitHub](https://github.com/ohsu-cedar-comp-hub/cycif-panel-reduction)
 
-This model uses a masked token modeling approach where:
-1. Single-cell images are tokenized into discrete codes using separate VQGAN
-   tokenizers for IF and H&E channels
-2. A RoBERTa-based masked language model learns to predict masked channel tokens
-   from visible channels
+## Model Architecture
 
-## Training Data
+| Component | Details |
+|-----------|---------|
+| Backbone  | RoBERTa (24 layers, 16 heads, dim=1024) |
+| IF Tokenizer | VQGAN (codebook=256, latent=4x4) |
+| H&E Tokenizer | VQGAN (codebook=256, latent=4x4) |
+| Sequence length | 18 channels x 16 tokens = 288 tokens |
+| Training | Masked token prediction with cosine masking schedule |
 
-Trained on the CRC-Orion dataset (colorectal cancer tissue microarrays) with
-17 IF markers + co-registered H&E.
+## Files
+
+- `mvtm_model.ckpt` — MVTM masked token model checkpoint (3.4 GB)
+- `tokenizer/if_config.yaml` — IF VQGAN configuration
+- `tokenizer/if_model.ckpt` — IF VQGAN checkpoint (955 MB)
+- `tokenizer/he_config.yaml` — H&E VQGAN configuration
+- `tokenizer/he_model.ckpt` — H&E VQGAN checkpoint (955 MB)
+- `config.json` — Model and tokenizer configuration
 
 ## Usage
 
@@ -136,26 +152,42 @@ from eval.load_model import load_model_from_huggingface
 model, tokenizer = load_model_from_huggingface()
 ```
 
-See the [repository](https://github.com/ChangLab/cycif-panel-reduction) for
-full documentation.
+See the [repository](https://github.com/ohsu-cedar-comp-hub/cycif-panel-reduction)
+for full documentation.
 
 ## Citation
 
-Please cite our Nature Methods paper (forthcoming).
+```bibtex
+@article{sims2026minimti,
+  title={miniMTI: minimal multiplex tissue imaging enhances biomarker expression prediction from histology},
+  author={Sims, Z. and Govindarajan, S. and Ait-Ahmad, K. and Ak, C. and Kuykendall, M. and Mills, G. B. and Eksi, E. and Chang, Y. H.},
+  journal={bioRxiv},
+  year={2026},
+  doi={10.64898/2026.01.21.700911}
+}
+```
 """
 
-    model_card_path = "/tmp/README.md"
+    model_card_path = "/tmp/minimti_README.md"
     with open(model_card_path, "w") as f:
         f.write(model_card)
 
-    api.upload_file(
-        path_or_fileobj=model_card_path,
-        path_in_repo="README.md",
-        repo_id=args.repo_id,
-        repo_type="model",
-    )
+    # Upload small files first
+    print(f"\nUploading to {args.repo_id}...")
 
-    print(f"\nAll files uploaded to https://huggingface.co/{args.repo_id}")
+    for path, name in [(config_path, "config.json"), (model_card_path, "README.md")]:
+        api.upload_file(path_or_fileobj=path, path_in_repo=name,
+                        repo_id=args.repo_id, repo_type="model")
+        print(f"  Uploaded {name}")
+
+    # Upload model files
+    for src, dst in uploads:
+        print(f"  Uploading {dst}...")
+        api.upload_file(path_or_fileobj=src, path_in_repo=dst,
+                        repo_id=args.repo_id, repo_type="model")
+        print(f"  Uploaded {dst}")
+
+    print(f"\nDone! Model available at: https://huggingface.co/{args.repo_id}")
 
 
 if __name__ == "__main__":

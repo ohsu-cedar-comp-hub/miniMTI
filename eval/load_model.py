@@ -7,7 +7,7 @@ import sys
 import json
 import torch
 
-HF_REPO_ID = "changlab/cycif-panel-reduction"
+HF_REPO_ID = "changlab/miniMTI-CRC"
 
 
 def download_from_huggingface(repo_id=HF_REPO_ID, cache_dir=None):
