@@ -1,12 +1,26 @@
 import os
 import sys
+import types
 import torch
 import numpy as np
 from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 from einops import rearrange
 
-# Import VQGAN model
+# Add taming-transformers submodule to path and patch PyTorch compatibility.
+# The upstream taming-transformers repo uses torch._six.string_classes, which
+# was removed in PyTorch 2.0. We shim it here so users don't need to patch
+# the submodule themselves.
+if not hasattr(torch, '_six'):
+    _six = types.ModuleType('torch._six')
+    _six.string_classes = (str,)
+    torch._six = _six
+    sys.modules['torch._six'] = _six
+
+_taming_path = os.path.join(os.path.dirname(__file__), '..', '..', 'third_party', 'taming-transformers')
+if os.path.isdir(_taming_path) and _taming_path not in sys.path:
+    sys.path.insert(0, os.path.abspath(_taming_path))
+
 from taming.models.vqgan import VQModel
 
 def load_config(config_path):

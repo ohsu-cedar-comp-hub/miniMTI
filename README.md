@@ -18,20 +18,31 @@ The model is trained on the CRC-Orion dataset (colorectal cancer tissue microarr
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Clone and install
-git clone https://github.com/ChangLab/cycif-panel-reduction.git
+# Clone with submodules (includes the VQGAN tokenizer)
+git clone --recurse-submodules https://github.com/ChangLab/cycif-panel-reduction.git
 cd cycif-panel-reduction
 uv sync
 ```
 
-Alternatively, install dependencies manually:
+If you already cloned without `--recurse-submodules`, initialize the VQGAN submodule:
+
+```bash
+git submodule update --init --recursive
+```
+
+Alternatively, install dependencies manually with pip:
 
 ```bash
 pip install torch torchvision pytorch-lightning transformers einops omegaconf \
     h5py numpy pandas scikit-image scikit-learn scipy matplotlib seaborn \
     tqdm torchmetrics wandb huggingface-hub
-pip install git+https://github.com/CompVis/taming-transformers.git
 ```
+
+### VQGAN Tokenizer
+
+The VQGAN tokenizer ([taming-transformers](https://github.com/CompVis/taming-transformers)) is included as a git submodule under `third_party/taming-transformers/`. It is used for encoding single-cell images into discrete tokens and decoding predicted tokens back into images. The submodule is automatically added to the Python path when importing `training.MVTM.tokenizer`, with compatibility patches applied for PyTorch 2.0+.
+
+Pre-trained VQGAN checkpoints (IF and H&E tokenizers) are available on HuggingFace alongside the main model weights.
 
 ## Quick Start
 
