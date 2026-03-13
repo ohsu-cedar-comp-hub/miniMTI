@@ -1,10 +1,12 @@
-# CycIF Panel Reduction with Masked Token Modeling
+# miniMTI: minimal multiplex tissue imaging
 
-Predicting missing immunofluorescence (IF) markers from reduced antibody panels using masked token modeling (MVTM).
+**miniMTI** is a molecularly anchored virtual staining framework that determines the minimal set of experimentally measured markers required, alongside H&E, to accurately reconstruct large multiplex tissue imaging (MTI) panels while preserving biologically and clinically relevant information.
+
+[[Paper]](https://www.biorxiv.org/content/10.64898/2026.01.21.700911v1) [[Model]](https://huggingface.co/changlab/cycif-panel-reduction)
 
 ## Overview
 
-This repository contains the code for our Nature Methods paper on CycIF panel reduction. The method works by:
+miniMTI learns from paired same-section H&E-MTI data using a unified multimodal generative model that can condition on arbitrary combinations of measured marker channels, coupled with an iterative panel selection strategy to rank informative molecular anchors. The method works by:
 
 1. **Tokenization**: Single-cell images (32x32 patches centered on segmented cells) are tokenized into discrete codes using VQGAN tokenizers — one for IF channels and one for H&E
 2. **Masked Token Modeling**: A RoBERTa-based masked language model learns to predict masked channel tokens from visible channels, treating each marker as a "sentence" of 16 tokens
@@ -202,12 +204,16 @@ Pre-trained model weights are hosted on HuggingFace:
 
 ## Citation
 
+If you use miniMTI in your research, please cite our preprint:
+
 ```bibtex
-@article{simsz2026cycif,
-  title={CycIF Panel Reduction with Masked Token Modeling},
-  author={...},
-  journal={Nature Methods},
-  year={2026}
+@article{sims2026minimti,
+  title={miniMTI: minimal multiplex tissue imaging enhances biomarker expression prediction from histology},
+  author={Sims, Z. and Govindarajan, S. and Ait-Ahmad, K. and Ak, C. and Kuykendall, M. and Mills, G. B. and Eksi, E. and Chang, Y. H.},
+  journal={bioRxiv},
+  year={2026},
+  doi={10.64898/2026.01.21.700911},
+  url={https://www.biorxiv.org/content/10.64898/2026.01.21.700911v1}
 }
 ```
 

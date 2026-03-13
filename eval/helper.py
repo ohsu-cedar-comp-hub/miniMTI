@@ -32,7 +32,7 @@ def get_model_and_tokenizer(configs, device):
         tokenizer.he_tokenizer = tokenizer.he_tokenizer.to(device)
 
     # Load model (MVTM)
-    model = Tokenized_MVTM(**configs['model']).load_from_checkpoint(model_ckpt, **configs['model'])
+    model = Tokenized_MVTM.load_from_checkpoint(model_ckpt, strict=False, **configs['model'])
 
     return model.to(device).eval(), tokenizer
 

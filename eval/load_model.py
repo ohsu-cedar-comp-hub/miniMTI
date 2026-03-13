@@ -160,7 +160,7 @@ def _load_from_paths(mvtm_ckpt, if_config, if_ckpt, he_config, he_ckpt,
     if he_config:
         tokenizer.he_tokenizer = tokenizer.he_tokenizer.to(device)
 
-    model = Tokenized_MVTM(**model_config).load_from_checkpoint(mvtm_ckpt, **model_config)
+    model = Tokenized_MVTM.load_from_checkpoint(mvtm_ckpt, strict=False, **model_config)
     model = model.to(device).eval()
 
     return model, tokenizer
