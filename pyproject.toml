@@ -3,7 +3,7 @@ name = "cycif-panel-reduction"
 version = "0.1.0"
 description = "CycIF panel reduction using masked token modeling"
 requires-python = ">=3.10"
-license = "Apache-2.0"
+license = "LicenseRef-OHSU-NonCommercial"
 readme = "README.md"
 dependencies = [
     "torch>=2.0",

@@ -219,8 +219,8 @@ If you use miniMTI in your research, please cite our preprint:
 
 ## License
 
-This project is licensed under the Apache License 2.0 — see [LICENSE](LICENSE) for details.
+This project is licensed for non-commercial academic and research use only. See [LICENSE](LICENSE) for details.
 
 ## Acknowledgements
 
-This work was supported by grants from the National Institutes of Health (NIH), the Chan Zuckerberg Initiative (CZI), and the Stanford Data Science Initiative. We thank the members of the Chang Lab for their feedback and assistance throughout the development of this project.
+This work was carried out with major support from the National Cancer Institute (NCI) Human Tumor Atlas Network (HTAN) Research Centers at OHSU (U2CCA233280), and funding from the Cancer Early Detection Advanced Research Center at Oregon Health & Science University, Knight Cancer Institute (CEDAR 2023-1796). Y.H.C. is supported by R01 CA253860, R01 CA276224, U01 294548, and the Kuni Foundation Imagination Grants. S.E.E. is supported by Prostate Cancer Foundation (GCNCR1865A) and International Alliance for Cancer Early Detection (ACED 2022-1508). The research reported in this publication used computational infrastructure supported by the Office of Research Infrastructure Programs, Office of the Director, National Institutes of Health, under Award Number S10OD034224. The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.
