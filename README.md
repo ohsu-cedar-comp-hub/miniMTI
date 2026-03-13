@@ -48,13 +48,21 @@ Pre-trained VQGAN checkpoints (IF and H&E tokenizers) are available on HuggingFa
 
 ## Quick Start
 
-### Download pre-trained model and run inference
+### Download pre-trained model and example data
 
 ```python
 from eval.load_model import load_model_from_huggingface
+from huggingface_hub import hf_hub_download
 
-# Downloads model weights from HuggingFace Hub (cached locally)
-model, tokenizer = load_model_from_huggingface()
+# Download model weights (~5.3 GB, requires access approval)
+model, tokenizer, config = load_model_from_huggingface()
+
+# Download example data (~178 MB, no approval needed)
+example_h5 = hf_hub_download(
+    "changlab/miniMTI-CRC-example",
+    "example_CRC04_10k.h5",
+    repo_type="dataset",
+)
 ```
 
 ### Run the example inference script
@@ -82,21 +90,21 @@ Input data is stored in HDF5 files with the following structure:
 | `masks`    | (N, 32, 32)     | bool    | Binary cell segmentation masks |
 | `metadata` | (N,)            | string  | Cell IDs and coordinates: `<sample>-CellID-<id>-x=<x>-y=<y>` |
 
-### CRC-Orion channel ordering (18 markers)
+### CRC-Orion channel ordering (18 tokens)
 
 | Index | Marker      | Index | Marker      |
 |-------|-------------|-------|-------------|
-| 0     | DAPI        | 9     | CD45RO      |
-| 1     | CD31        | 10    | CD20        |
-| 2     | CD45        | 11    | PD-L1       |
-| 3     | CD68        | 12    | CD3e        |
-| 4     | CD4         | 13    | CD163       |
-| 5     | FOXP3       | 14    | E-cadherin  |
-| 6     | CD8a        | 15    | PD-1        |
-| 7     | CD45RO      | 16    | Ki67        |
+| 0     | DAPI        | 9     | PD-L1       |
+| 1     | CD31        | 10    | CD3e        |
+| 2     | CD45        | 11    | CD163       |
+| 3     | CD68        | 12    | E-cadherin  |
+| 4     | CD4         | 13    | PD-1        |
+| 5     | FOXP3       | 14    | Ki67        |
+| 6     | CD8a        | 15    | PanCK       |
+| 7     | CD45RO      | 16    | aSMA        |
 | 8     | CD20        | 17    | H&E (RGB)   |
 
-Note: DAPI (index 0) and PanCK/aSMA are included in the IF channels. H&E is treated as a single multi-channel token.
+Each IF marker (indices 0–16) is encoded as a single-channel VQGAN token. H&E (index 17) is encoded as a 3-channel RGB VQGAN token.
 
 ## Full Pipeline
 
@@ -188,9 +196,68 @@ python eval/calculate_pll_from_tokens.py 10 17,6,11,13 5 /path/to/token_ids.npy 
 
 ## Pre-trained Models
 
-Pre-trained model weights are hosted on HuggingFace:
-- **Model**: [changlab/miniMTI-CRC](https://huggingface.co/changlab/miniMTI-CRC)
-- **Example data**: [changlab/miniMTI-CRC-example](https://huggingface.co/datasets/changlab/miniMTI-CRC-example)
+Pre-trained model weights and example data are hosted on HuggingFace:
+- **Model**: [changlab/miniMTI-CRC](https://huggingface.co/changlab/miniMTI-CRC) — MVTM checkpoint + VQGAN tokenizers
+- **Example data**: [changlab/miniMTI-CRC-example](https://huggingface.co/datasets/changlab/miniMTI-CRC-example) — 10k single-cell patches from CRC-Orion
+
+### Requesting access
+
+The model weights are gated for non-commercial academic use. To gain access:
+
+1. Create a [HuggingFace](https://huggingface.co) account (use your institutional email)
+2. Visit [changlab/miniMTI-CRC](https://huggingface.co/changlab/miniMTI-CRC) and click **"Agree and access repository"**
+3. Fill in your name, affiliation, and agree to the non-commercial license
+
+Access is typically granted within 24 hours. Once approved, authenticate locally:
+
+```bash
+# Install the HuggingFace CLI (included in project dependencies)
+pip install huggingface-hub
+
+# Log in with your HuggingFace token
+huggingface-cli login
+```
+
+### Downloading model weights
+
+```python
+from eval.load_model import load_model_from_huggingface
+
+# Downloads and caches all weights (~5.3 GB total), then loads the model
+model, tokenizer, config = load_model_from_huggingface()
+```
+
+Or download individual files manually:
+
+```python
+from huggingface_hub import hf_hub_download
+
+# MVTM masked token model (~3.4 GB)
+mvtm_ckpt = hf_hub_download("changlab/miniMTI-CRC", "mvtm_model.ckpt")
+
+# VQGAN IF tokenizer (~955 MB)
+if_config = hf_hub_download("changlab/miniMTI-CRC", "tokenizer/if_config.yaml")
+if_ckpt = hf_hub_download("changlab/miniMTI-CRC", "tokenizer/if_model.ckpt")
+
+# VQGAN H&E tokenizer (~955 MB)
+he_config = hf_hub_download("changlab/miniMTI-CRC", "tokenizer/he_config.yaml")
+he_ckpt = hf_hub_download("changlab/miniMTI-CRC", "tokenizer/he_model.ckpt")
+```
+
+### Downloading example data
+
+The example dataset does not require access approval:
+
+```python
+from huggingface_hub import hf_hub_download
+
+# 10,000 single-cell patches from CRC-Orion sample CRC04 (~178 MB)
+example_h5 = hf_hub_download(
+    "changlab/miniMTI-CRC-example",
+    "example_CRC04_10k.h5",
+    repo_type="dataset",
+)
+```
 
 ### Architecture
 

@@ -107,7 +107,7 @@ def main():
     model_card = """---
 license: other
 license_name: ohsu-non-commercial
-license_link: https://github.com/ohsu-cedar-comp-hub/cycif-panel-reduction/blob/publication/LICENSE
+license_link: https://github.com/ChangLab/cycif-panel-reduction/blob/publication/LICENSE
 tags:
   - biology
   - multiplex-imaging
@@ -123,7 +123,7 @@ framework that determines the minimal set of experimentally measured markers req
 alongside H&E, to accurately reconstruct large multiplex tissue imaging (MTI) panels.
 
 **Paper:** [bioRxiv 2026.01.21.700911](https://www.biorxiv.org/content/10.64898/2026.01.21.700911v1)
-**Code:** [GitHub](https://github.com/ohsu-cedar-comp-hub/cycif-panel-reduction)
+**Code:** [GitHub](https://github.com/ChangLab/cycif-panel-reduction)
 
 ## Model Architecture
 
@@ -152,7 +152,7 @@ from eval.load_model import load_model_from_huggingface
 model, tokenizer = load_model_from_huggingface()
 ```
 
-See the [repository](https://github.com/ohsu-cedar-comp-hub/cycif-panel-reduction)
+See the [repository](https://github.com/ChangLab/cycif-panel-reduction)
 for full documentation.
 
 ## Citation
