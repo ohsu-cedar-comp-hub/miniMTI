@@ -1,7 +1,7 @@
 {
     "model_id":"hhdnp2ma",
     "ckpt_path": "PLEASE_SET_TO_YOUR_CHECKPOINT_DIRECTORY",
-    "huggingface_repo": "changlab/cycif-panel-reduction",
+    "huggingface_repo": "changlab/miniMTI-CRC",
     "model":{
         "num_markers":18,
         "num_layers":24,

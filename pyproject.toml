@@ -1,5 +1,5 @@
 [project]
-name = "cycif-panel-reduction"
+name = "miniMTI"
 version = "0.1.0"
 description = "CycIF panel reduction using masked token modeling"
 requires-python = ">=3.10"

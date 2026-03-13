@@ -57,7 +57,7 @@ def main():
 
     # Model source options
     source_group = parser.add_argument_group('Model source (HuggingFace or local)')
-    source_group.add_argument('--hf-repo', type=str, default='changlab/cycif-panel-reduction',
+    source_group.add_argument('--hf-repo', type=str, default='changlab/miniMTI-CRC',
                               help='HuggingFace repo ID for model download')
     source_group.add_argument('--local-mvtm-ckpt', type=str, default=None,
                               help='Local path to MVTM checkpoint (skips HuggingFace download)')

@@ -25,8 +25,8 @@ The model is trained on the CRC-Orion dataset (colorectal cancer tissue microarr
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clone with submodules (includes the VQGAN tokenizer)
-git clone --recurse-submodules https://github.com/ChangLab/cycif-panel-reduction.git
-cd cycif-panel-reduction
+git clone --recurse-submodules https://github.com/ChangLab/miniMTI.git
+cd miniMTI
 uv sync
 ```
 

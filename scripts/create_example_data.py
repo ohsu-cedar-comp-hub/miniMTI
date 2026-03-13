@@ -13,7 +13,7 @@ Usage:
         --num-cells 200
 
 To upload to HuggingFace:
-    huggingface-cli upload changlab/cycif-panel-reduction-example example_data.h5
+    huggingface-cli upload changlab/miniMTI-CRC-example example_data.h5
 """
 import argparse
 import h5py
