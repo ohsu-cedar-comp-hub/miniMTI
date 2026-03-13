@@ -95,6 +95,38 @@ with torch.no_grad():
 
 For a more complete example with evaluation metrics, see `scripts/inference_example.py`.
 
+### Expected output
+
+Running the Quick Start snippet on 100 cells from the example dataset with input panel H&E + CD8a + PD-L1 + CD163 produces the following Spearman correlations between real and predicted mean marker intensities:
+
+| Predicted marker | Spearman *r* | | Predicted marker | Spearman *r* |
+|------------------|-------------:|-|------------------|-------------:|
+| DAPI             |       0.8524 | | CD3e             |       0.9470 |
+| CD31             |       0.8051 | | E-cadherin       |       0.9410 |
+| CD45             |       0.9741 | | Ki67             |       0.5163 |
+| CD68             |       0.6889 | | PanCK            |       0.8511 |
+| CD4              |       0.9326 | | aSMA             |       0.4230 |
+| FOXP3            |       0.7263 | |                  |              |
+| CD45RO           |       0.9278 | |                  |              |
+| CD20             |       0.6621 | |                  |              |
+| PD-L1            |       0.5180 | |                  |              |
+
+Note: Correlations improve with larger evaluation sets (mean *r* = 0.80 at 10,000 cells). Results on 100 cells show higher variance due to the small sample size.
+
+### Runtime
+
+Benchmarked on a single NVIDIA A40 (48 GB) with batch size 256:
+
+| Step | Time |
+|------|------|
+| Model loading (from local cache) | ~5 min |
+| Data loading (100 / 1k / 10k cells) | 0.2s / 0.4s / 3.3s |
+| Inference (100 / 1k / 10k cells) | 11s / 93s / 15 min |
+| Throughput | ~93 ms/cell |
+| Peak GPU memory | ~21 GB |
+
+First-time model download from HuggingFace (~5.3 GB) depends on network speed. Subsequent runs use the local cache.
+
 ## Data Format
 
 Input data is stored in HDF5 files with the following structure:
