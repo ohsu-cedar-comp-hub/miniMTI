@@ -4,6 +4,10 @@
 
 [[Paper]](https://www.biorxiv.org/content/10.64898/2026.01.21.700911v1) [[Model]](https://huggingface.co/changlab/miniMTI-CRC)
 
+<p align="center">
+  <img src="assets/miniMTI_fig1.png" alt="miniMTI overview" width="100%">
+</p>
+
 ## Overview
 
 miniMTI learns from paired same-section H&E-MTI data using a unified multimodal generative model that can condition on arbitrary combinations of measured marker channels, coupled with an iterative panel selection strategy to rank informative molecular anchors. The method works by:

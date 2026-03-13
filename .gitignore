@@ -30,6 +30,7 @@ __pycache__/
 *.png
 *.jpg
 *.jpeg
+!assets/*.png
 *.ome.tif
 *.ome.tiff
 
