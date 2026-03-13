@@ -99,7 +99,7 @@ For a more complete example with evaluation metrics, see `scripts/inference_exam
 
 Running the Quick Start snippet on 100 cells from the example dataset with input panel H&E + CD8a + PD-L1 + CD163 produces the following Spearman correlations between real and predicted mean marker intensities:
 
-| Predicted marker | Spearman *r* | | Predicted marker | Spearman *ρ* |
+| Predicted marker | Spearman *ρ* | | Predicted marker | Spearman *ρ* |
 |------------------|-------------:|-|------------------|-------------:|
 | DAPI             |       0.8524 | | CD3e             |       0.9470 |
 | CD31             |       0.8051 | | E-cadherin       |       0.9410 |
