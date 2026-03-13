@@ -1,40 +1,17 @@
+Research and Academic Uses Only Software License
+That Prohibits Commercial Use and Redistribution
+
 Copyright (c) 2024 – Present, OREGON HEALTH & SCIENCE UNIVERSITY (OHSU).  All rights reserved.
-
 Developed by: Zachary Sims (OHSU) and Young Hwan Chang, (OHSU)
-
 Contact:  chanyo@ohsu.edu , simsz@ohsu.edu , and techmgmt@ohsu.edu
-
-In this agreement ("Agreement"), permission is hereby granted, free of charge, to any person
-for use in a non-profit research institution and/or academic university ("Research Licensee")
-that has obtained a copy of this software and associated documentation files (the "Software"),
-to deal with the Software to use, copy, modify, or merge the Software, subject to the
-following conditions:
-
-* Research Licensee is prohibited from publishing, distributing, sublicensing, and/or selling
-  copies of the Software or any derivative work of the same ("Derivative Work") without
-  express written permission in a separate document or license from the copyright holder.
-
+In this agreement ("Agreement"), permission is hereby granted, free of charge, to any person for use in a non-profit research institution and/or academic university ("Research Licensee") that has obtained a copy of this software and associated documentation files (the "Software"), to deal with the Software to use, copy, modify, or merge the Software, subject to the following conditions:
+* Research Licensee is prohibited from publishing, distributing, sublicensing, and/or selling copies of the Software or any derivative work of the same ("Derivative Work") without express written permission in a separate document or license from the copyright holder.
 * No redistributions of the Software or Derivative Work may occur by the Research Licensee.
-
-* No Commercial Use is permitted, wherein Commercial Use means (a) the sale, license, lease,
-  export, transfer or other distribution of the Software and/or a Derivative Work to another
-  person or entity for financial gain and/or (b) the use of the Software and/or a Derivative
-  Work to provide a service to a person or entity not party to this Agreement for financial
-  gain, including but not limited to industry-sponsored services and/or research work.
-
-* Neither the names of the developer nor the copyright holder may be used to endorse or
-  promote products related to this Software without specific prior written permission.
-
-For individuals and/or entities that are not members of a non-profit research institution
-and/or an academic university, this Agreement permits the viewing of the source code but
-explicitly prohibits 1) the use, incorporation and/or modification of the source code, 2) the
-creation of Derivative Works, 3) publishing, distributing, sublicensing, and/or selling copies
-of the Software or any Derivative Work or any other redistributions of the Software or
-Derivative Work, and 4) Commercial Use.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT.  IN NO EVENT SHALL THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE
-SOFTWARE.
+* No Commercial Use is permitted, wherein Commercial Use means (a) the sale, license, lease, export, transfer or other distribution of the Software and/or a Derivative Work to another person or entity for financial gain and/or (b) the use of the Software and/or a Derivative Work to provide a service to a person or entity not party to this Agreement for financial gain, including but not limited to industry-sponsored services and/or research work.
+* Neither the names of the developer nor the copyright holder may be used to endorse or promote products related to this Software without specific prior written permission.
+For individuals and/or entities that are not members of a non-profit research institution and/or an academic university, this Agreement permits the viewing of the source code but explicitly prohibits 1) the use, incorporation and/or modification of the source code, 2) the creation of Derivative Works, 3) publishing, distributing, sublicensing, and/or selling copies of the Software or any Derivative Work or any other redistributions of the Software or Derivative Work, and 4) Commercial Use.
+The following third party software was incorporated into this Software under the Apache 2.0 license, and thus notwithstanding anything herein the Apache 2.0 license shall solely govern the following third party software:
+* PyTorch Lightning v1.7.7 - https://github.com/Lightning-AI/pytorch-lightning
+* Torchmetrics v0.11.0 - https://github.com/Lightning-AI/torchmetrics
+* Transformers v4.3.1 - https://pypi.org/project/transformers/4.3.1/
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE SOFTWARE.
