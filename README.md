@@ -113,6 +113,19 @@ Running the Quick Start snippet on 100 cells from the example dataset with input
 
 Note: Correlations improve with larger evaluation sets (mean *r* = 0.80 at 10,000 cells). Results on 100 cells show higher variance due to the small sample size.
 
+### Typical install time
+
+On a standard desktop computer with a broadband internet connection (~100 Mbps):
+
+| Step | Time |
+|------|------|
+| Clone repository + VQGAN submodule | ~1 min |
+| Install dependencies (`uv sync` or `pip install`) | 5–10 min |
+| Download pre-trained model weights from HuggingFace | 5–10 min |
+| **Total** | **~15–20 min** |
+
+Install time is dominated by downloading PyTorch (~2.5 GB) and the model weights (~5.3 GB).
+
 ### Runtime
 
 Benchmarked on a single NVIDIA A40 (48 GB) with batch size 256:
